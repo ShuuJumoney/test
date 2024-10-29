@@ -730,7 +730,7 @@ label.timeTitle {
 	left: 6.7em;
 }
 
-#captureBtn {
+.modal-icon {
     position: relative;
     top: -1.45em;
     padding: 2.5px;
@@ -744,8 +744,9 @@ label.timeTitle {
     color: #5e5e5e;
     cursor: pointer;
     float: left;
+    margin-right: 6px;
 }
-#captureBtn:hover, #closeModal:hover {
+.modal-icon:hover, #closeModal:hover {
     background: #f0f0f0;
 }
 
@@ -807,4 +808,10 @@ input[type="checkbox"]:checked+.checkmark::after {
 input[type="checkbox"]:disabled+.checkmark {
 	background-color: #555;
 	cursor: not-allowed;
+}
+
+#modalItemColors{
+	display: flex;
+    align-items: center;
+    justify-content: center;
 }
