@@ -219,6 +219,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			});
 			
 			//모바일 더블 클릭
+			/*
 			document.querySelectorAll(".item .img-area").forEach(imgArea => {
 				const currentTime = new Date().getTime();
   				const tapLength = currentTime - lastTap;  	
@@ -227,7 +228,23 @@ document.addEventListener("DOMContentLoaded", function () {
 		    	}
 			    lastTap = currentTime;
 			});
+			*/
+			document.querySelectorAll(".item .img-area").forEach((imgArea) => {
+			  imgArea.addEventListener( "touchend",  (e) => {
+			      const currentTime = new Date().getTime();
+			      const tapLength = currentTime - lastTap;
 			
+			      if (tapLength < 300 && tapLength > 0) {
+			        e.preventDefault(); // 기본 확대/축소 방지
+			        console.log("모바일 더블탭 감지됨");
+			        singleChanneling(e);
+			      }
+			
+			      lastTap = currentTime;
+			    },
+			    { passive: false } // passive: false 설정
+			  );
+			});
 
 	        console.log('주머니 리스트 생성 완료');
 		}catch (error) {
