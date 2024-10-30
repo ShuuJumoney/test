@@ -1,4 +1,3 @@
-//document.write('<script type="text/javascript" src="./colorCode.js"></script>');
 document.addEventListener("DOMContentLoaded", function () {
 	// URL 변경 후 버전
 	getErinTime(document.getElementById("erinTime"));
@@ -212,6 +211,18 @@ document.addEventListener("DOMContentLoaded", function () {
 			document.querySelectorAll(".icon-external-link").forEach(button => {
 				button.addEventListener("click", channelModal)
 			});
+			
+			// .item 아래에 있는 .img-area에만 더블 클릭 이벤트 리스너 추가
+			document.querySelectorAll(".item .img-area").forEach(imgArea => {
+			    imgArea.addEventListener("dblclick", singleChanneling)
+			});
+			
+			//모바일 더블 클릭
+			document.querySelectorAll(".item .img-area").forEach(imgArea => {
+			    imgArea.addEventListener("touchend", singleChanneling)
+			});
+			
+
 	        console.log('주머니 리스트 생성 완료');
 		}catch (error) {
         	console.error('에러 발생:' + error);
@@ -323,9 +334,11 @@ document.addEventListener("DOMContentLoaded", function () {
 			//if (count % max_cnt === 0) table += "<tr>";
 			//캡쳐용 마을 이름 숨기기
 			pouchOrder[count] = item_nm;
-			table += `<div class="item"><span class="icon icon-copy"></span>`;
+			
+			table += `<div class="item">`; //<span class="icon icon-repeat channeling"></span>`;
+			table += `<span class="icon icon-copy"></span>`;
 			table += `<span class="icon icon-external-link" style="right: 2.1em;"></span>`;
-			table += `<h3 class="location_nm hidden">${location_nm}</h3>`
+			table += `<h3 class="location_nm hidden" data-key="${npc}">${location_nm}</h3>`
 			//table += `<img src="${url}" alt="${item_nm}" class="api-img"><label class="item_nm">${item_nm}</label></div>`;
 			table += `<div class="img-area"><div class="loading-spinner" data-idx="${count}"></div>`;
 			table += `<img src="" alt="${item_nm}" class="api-img hidden" onerror="this.src='${url}'" data-qCode = '${qCode}'>`; 
@@ -594,7 +607,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	            }
 	        }
 	    });
-
 	    return sortedItems;
 	}
 	
@@ -619,7 +631,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	    const serverSetStatus = {}; // 서버별 완성된 세트 저장
 	    const flowerBasketOnly = {}; // 꽃바구니만 있는 서버 저장
 	    const integratedSets = new Set(); // 통합으로만 완성된 세트 저장
-	
 	    // 서버별 아이템 수집
 	    Object.entries(itemGroup).forEach(([itemName, { servers }]) => {
 	        Object.entries(servers).forEach(([server]) => {
@@ -763,95 +774,217 @@ document.addEventListener("DOMContentLoaded", function () {
    	}	
    	
 	// 채널 정보 DIV 생성 함수
-	async function createChannelInfoDiv(itemGroup) {
+	async function createChannelInfoDiv(itemGroup, returnObj) {
 	    const channelInfoDiv = document.createElement("div");
 	    channelInfoDiv.classList.add("channel-info");
 	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info">채널링 정보</h4>`;
-    	
+	    let itemDataList = [];
+	    
 	    const { serverSetStatus, integratedSets, flowerBasketOnly } = checkSetCompletionByServer(itemGroup);
-	     // 서버 순서에 맞게 정렬된 상태로 서버별 세트 정보 출력
-    	const serverSetInfo = orderedSetDefinitions
-        .map(setName => {
-            if (serverSetStatus[setName]) {
-                const sortedServers = Object.keys(server_ch)
-                    .filter(server => serverSetStatus[setName].includes(server)) // 해당 세트에 포함된 서버만 선택
-                    .map(server => `<label class="server-mark ${server}" data-set="${setName}" data-server="${server}"></label>`)
-                    .join(" "); // 각 <label>을 공백으로 구분하여 연결
-                
-                return `<span class="setComplete ${setName}" data-set="${setName}" color3="">${setName}</span> ${sortedServers}`;
-            }
-            return null; // 해당 세트가 없는 경우 null 반환
-        })
-        .filter(info => info) // null 값 제거
-        .join("<br/>");
-
-	    // 통합 세트 정보 출력
-	    const integratedSetInfo = orderedSetDefinitions
-	        .filter(setName => integratedSets.has(setName)) // 통합 세트에 포함된 항목 필터링
-	        .map(setName => `<span class="setComplete ${setName}" data-set="${setName}">${setName}</span>`)
-	        .join(" ");
+	
+	    const serverSetInfo = generateServerSetInfo(serverSetStatus);
+	    const integratedSetInfo = generateIntegratedSetInfo(integratedSets);
+	    const flowerBasketInfo = generateFlowerBasketInfo(flowerBasketOnly);
 	
 	    if (serverSetInfo) {
 	        channelInfoDiv.innerHTML += `<p class="set-info">${serverSetInfo}</p>`;
 	    }
-	
 	    if (integratedSetInfo) {
 	        channelInfoDiv.innerHTML += `<p class="set-info">${integratedSetInfo}</p>`;
 	    }
-	
-	    if (flowerBasketOnly["꽃바구니"]) {
-	        const sortedFlowerBasketServers = Object.keys(server_ch)
-	            .filter(server => flowerBasketOnly["꽃바구니"].includes(server)) // 서버 순서에 맞게 필터링
-	            .map(server => `<label class="server-mark ${server}" data-set="꽃바구니" data-server="${server}"></label>`)
-	            .join(" ");
-	        
-	        const flowerBasketInfo = `
-	            <span class="setComplete 꽃바구니" data-set="꽃바구니">꽃바구니</span> ${sortedFlowerBasketServers}`;
-	        
+	    if (flowerBasketInfo) {
 	        channelInfoDiv.innerHTML += `<p class="set-info">${flowerBasketInfo}</p>`;
 	    }
-	    
+	
 	    for (const [itemName, { servers, item_data }] of Object.entries(itemGroup)) {
-			const qCode = getQcode(item_data.image_url);
-			
-	        let color = decodeGivenColorQuery(qCode); // 비동기 호출
-	        color = formatColorValuesWithPlaceholder(color, qCode);
-	
-	        let itemInfo = `<p class="channel-info-item" data-item="${itemName}"><label class="info-jumoney-name">${itemName}<span class="color_rect hidden_rect" style="background:${color.C.hex};" alt="${color.C.hex} &nbsp;&nbsp;  ${color.C.rgb}"></span></label>`;
-	        itemInfo += `<span class="color-03" style="display:none" color-data="${color.A.hex}, ${color.B.hex}, ${color.C.hex}"></span>`;
-	
-	        for (const [server, chList] of Object.entries(servers)) {
-	            itemInfo += `<span class="info-channel all-server" data-server="${server}"><label class="server-mark ${server}"></label>${chList.join(", ")}</span>`;
-	        }
-	
-	        itemInfo += "</p>";
+	        const itemInfo = await generateItemInfo(itemName, servers, item_data, returnObj, itemDataList);
 	        channelInfoDiv.innerHTML += itemInfo;
 	    }
-	       
-	    // 이벤트 처리: 세트와 서버 라벨 클릭
+	
+	    // 클릭 이벤트 핸들러 등록
+	    addClickEventsToChannelInfo(channelInfoDiv);
+	
+	    if (returnObj) return { div: channelInfoDiv, data: itemDataList };
+	    return channelInfoDiv;
+	}
+	
+	// 서버 세트 정보 생성 함수
+	function generateServerSetInfo(serverSetStatus) {
+	    return orderedSetDefinitions
+	        .map(setName => {
+	            if (serverSetStatus[setName]) {
+	                const servers = Object.keys(server_ch)
+	                    .filter(server => serverSetStatus[setName].includes(server))
+	                    .map(server => `<label class="server-mark ${server}" data-set="${setName}" data-server="${server}"></label>`)
+	                    .join(" ");
+	                return `<span class="setComplete ${setName}" data-set="${setName}">${setName}</span> ${servers}`;
+	            }
+	            return null;
+	        })
+	        .filter(info => info)
+	        .join("<br/>");
+	}
+	
+	// 통합 세트 정보 생성 함수
+	function generateIntegratedSetInfo(integratedSets) {
+	    return orderedSetDefinitions
+	        .filter(setName => integratedSets.has(setName))
+	        .map(setName => `<span class="setComplete ${setName}" data-set="${setName}">${setName}</span>`)
+	        .join(" ");
+	}
+	
+	// 꽃바구니 세트 정보 생성 함수
+	function generateFlowerBasketInfo(flowerBasketOnly) {
+	    if (flowerBasketOnly["꽃바구니"]) {
+	        const servers = Object.keys(server_ch)
+	            .filter(server => flowerBasketOnly["꽃바구니"].includes(server))
+	            .map(server => `<label class="server-mark ${server}" data-set="꽃바구니" data-server="${server}"></label>`)
+	            .join(" ");
+	        return `<span class="setComplete 꽃바구니" data-set="꽃바구니">꽃바구니</span> ${servers}`;
+	    }
+	    return "";
+	}
+	
+	// 아이템 정보 생성 함수
+	async function generateItemInfo(itemName, servers, item_data, returnObj, itemDataList) {
+	    const qCode = getQcode(item_data.image_url);
+	    let color = await decodeGivenColorQuery(qCode);
+	    color = formatColorValuesWithPlaceholder(color, qCode);
+	
+	    let itemInfo = `<p class="channel-info-item" data-item="${itemName}">
+	        <label class="info-jumoney-name">${itemName}<span class="color_rect hidden_rect" alt="${color.C.hex}&nbsp;&nbsp;${color.C.rgb}" style="background:${color.C.hex};"></span></label>
+	        <span class="color-03" style="display:none" color-data="${color.A.hex}, ${color.B.hex}, ${color.C.hex}"></span>`;
+	
+	    if (returnObj) itemDataList.push({ dataItem: itemName, colorData: `${color.A.hex}, ${color.B.hex}, ${color.C.hex}` });
+	
+	    for (const [server, chList] of Object.entries(servers)) {
+	        itemInfo += `<span class="info-channel all-server" data-server="${server}">
+	            <label class="server-mark ${server}"></label>${chList.join(", ")}</span>`;
+	    }
+	
+	    return itemInfo + "</p>";
+	}
+	
+	// 클릭 이벤트 핸들러 추가 함수
+	function addClickEventsToChannelInfo(channelInfoDiv) {
+	    channelInfoDiv.querySelectorAll(".setComplete").forEach(setElement => {
+	        setElement.addEventListener("click", (e) => handleSetClick(e, setElement));
+	    });
+	
+	    channelInfoDiv.querySelectorAll(".server-mark").forEach(serverElement => {
+	        serverElement.addEventListener("click", (e) => handleServerClick(e, serverElement));
+	    });
+	
+	    channelInfoDiv.querySelector(".toggle-all-info").addEventListener("click", (e) => {
+	        resetChannelVisibility(e.target.closest(".channel-info"));
+	    });
+	}
+	
+	// 세트 클릭 핸들러
+	function handleSetClick(e, setElement) {
+	    const setName = setElement.getAttribute("data-set");
+	    const channelInfo = e.target.closest(".channel-info");
+	    const activeComplete = channelInfo.querySelector(".setComplete.active");
+	    const activeServer = channelInfo.querySelector(".server-mark.active");
+	
+	    let filterUse = true;
+	    if (activeServer) activeServer.classList.remove("active");
+	    if (activeComplete && activeComplete !== e.target) {
+	        activeComplete.classList.remove("active");
+	    } else {
+	        filterUse = false;
+	    }
+	    if (!activeComplete) filterUse = true;
+	
+	    toggleSetVisibility(setName, channelInfo, filterUse);
+	    e.target.classList.toggle("active");
+	    e.stopPropagation();
+	}
+	
+	// 서버 클릭 핸들러
+	function handleServerClick(e, serverElement) {
+	    const server = serverElement.getAttribute("data-server");
+	    const setName = serverElement.getAttribute("data-set");
+	    const channelInfo = e.target.closest(".channel-info");
+	    const activeServer = channelInfo.querySelector(".server-mark.active");
+	    const activeComplete = channelInfo.querySelector(".setComplete.active");
+	
+	    let filterUse = true;
+	    if (activeComplete) activeComplete.classList.remove("active");
+	    if (activeServer && activeServer !== e.target) {
+	        activeServer.classList.remove("active");
+	    } else {
+	        filterUse = false;
+	    }
+	    if (!activeServer) filterUse = true;
+	
+	    toggleChannelVisibility(setName, server, channelInfo, filterUse);
+	    e.target.classList.toggle("active");
+	    e.stopPropagation();
+	}
+	
+	// 세트 가시성 토글
+	function toggleSetVisibility(setName, channelInfo, filterUse) {
+	    if (filterUse) {
+	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	            const itemName = item.getAttribute("data-item");
+	            item.style.display = isPartOfSet(setName, itemName) ? "block" : "none";
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo);
+	    }
+	}
+	
+	// 서버 가시성 토글
+	function toggleChannelVisibility(setName, server, channelInfo, filterUse) {
+	    if (filterUse) {
+	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	            const itemName = item.getAttribute("data-item");
+	            item.style.display = isPartOfSet(setName, itemName) ? "block" : "none";
+	            item.querySelectorAll(".info-channel").forEach(channel => {
+	                channel.style.display = (channel.getAttribute("data-server") === server) ? "block" : "none";
+	            });
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo);
+	    }
+	}
+	
+	// 채널 가시성 리셋
+	function resetChannelVisibility(channelInfo) {
+	    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	        item.style.display = "block";
+	        item.querySelectorAll(".info-channel").forEach(channel => {
+	            channel.style.display = "block";
+	        });
+	    });
+	    channelInfo.querySelectorAll(".active").forEach(activeElement => {
+	        activeElement.classList.remove("active");
+	    });
+	}
+	// 이벤트 처리 함수: 세트와 서버 라벨 클릭
+	function addClickEventsToChannelInfo(channelInfoDiv) {
 	    channelInfoDiv.querySelectorAll(".setComplete").forEach(setElement => {
 	        setElement.addEventListener("click", (e) => {
 	            const setName = setElement.getAttribute("data-set");
 	            const channelInfo = e.target.closest(".channel-info");
 	            const activeComplete = channelInfo.querySelector(".setComplete.active");
 	            const activeServer = channelInfo.querySelector(".server-mark.active");
-	            
-	            let fillterUse = true;
-	            
-	            if(activeServer) activeServer.classList.remove("active");
-	            
+	
+	            let filterUse = true;
+	
+	            if (activeServer) activeServer.classList.remove("active");
+	
 	            if (activeComplete && activeComplete !== e.target) {
-		            activeComplete.classList.remove("active");		            
-		        }else{ //같은 요소이면 취소
-					fillterUse = false;
-				}
-				
-				//맨 처음 클릭일때
-				if(!activeComplete) fillterUse = true;
-				
-	            toggleSetVisibility(setName, channelInfo, fillterUse);
-	           	//e.target.classList.toggle("active");
-	           	e.target.classList.toggle("active");
+	                activeComplete.classList.remove("active");
+	            } else {
+	                filterUse = false; // 같은 요소를 클릭하면 필터 사용 취소
+	            }
+	
+	            if (!activeComplete) filterUse = true; // 맨 처음 클릭일 때
+	
+	            toggleSetVisibility(setName, channelInfo, filterUse);
+	            e.target.classList.toggle("active");
 	            e.stopPropagation();
 	        });
 	    });
@@ -862,96 +995,110 @@ document.addEventListener("DOMContentLoaded", function () {
 	            const setName = serverElement.getAttribute("data-set");
 	            const channelInfo = e.target.closest(".channel-info");
 	            const activeServer = channelInfo.querySelector(".server-mark.active");
-	            const activeComplete = channelInfo.querySelector(".setComplete.active");	            
-	            let fillterUse = true;
-	            
-	            if(activeComplete) activeComplete.classList.remove("active");
-	            
-	            //e.target.classList.toggle("active");	            
-	            // 기존 활성화된 server-mark의 active 클래스 제거 (다른 요소일 경우만)	            
-		        if (activeServer && activeServer !== e.target) {		            
-		            activeServer.classList.remove("active");
-		        }else{ //같은 요소이면 취소
-					fillterUse = false;
-				}				
-				
-				//맨 처음 클릭일때
-				if(!activeServer) fillterUse = true;
-				
-	            toggleChannelVisibility(setName, server, channelInfo, fillterUse);
-		        	           
+	            const activeComplete = channelInfo.querySelector(".setComplete.active");
+	            let filterUse = true;
+	
+	            if (activeComplete) activeComplete.classList.remove("active");
+	
+	            if (activeServer && activeServer !== e.target) {
+	                activeServer.classList.remove("active");
+	            } else {
+	                filterUse = false;
+	            }
+	
+	            if (!activeServer) filterUse = true;
+	
+	            toggleChannelVisibility(setName, server, channelInfo, filterUse);
+	
 	            e.target.classList.toggle("active");
 	            e.stopPropagation();
 	        });
 	    });
-
+	
 	    channelInfoDiv.querySelector(".toggle-all-info").addEventListener("click", (e) => {
-		    resetChannelVisibility(e.target.closest(".channel-info"), true);  // 이벤트 객체를 매개변수로 전달
-		});
+	        resetChannelVisibility(e.target.closest(".channel-info"), true); // 이벤트 객체를 매개변수로 전달
+	    });
+	}
 	
-	    // 특정 세트만 표시하는 함수 (실크셋+와 일반 실크셋 구분)
-	    function toggleSetVisibility(setName, channelInfo, fillterUse) {
-			if(fillterUse){
-			    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
-			        const itemName = item.getAttribute("data-item");
-					const partOfSet = isPartOfSet(setName, itemName);		
-		        	item.style.display = partOfSet ? "block" : "none";
-		        	
-			        // 채널 정보 표시 여부 설정
-			        item.querySelectorAll(".info-channel").forEach(channel => {
-			            channel.style.display = "block";
-			            //channel.classList.add("active");
-			        });
-					
-			    });
-		    }
-		    else{
-				resetChannelVisibility(channelInfo, false);			
-			}
-		}
-		
-		// 특정 서버의 채널만 표시하는 함수
-		function toggleChannelVisibility(setName, server, channelInfo, fillterUse) {
-			if(fillterUse){		
-			    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
-			        const itemName = item.getAttribute("data-item");
-					const partOfSet = isPartOfSet(setName, itemName);		
-		        	item.style.display = partOfSet ? "block" : "none";
-		        	
-					
-			        item.querySelectorAll(".info-channel").forEach(channel => {
-			            const channelServer = channel.getAttribute("data-server");
-			            channel.style.display = (channelServer === server) ? "block" : "none";
-			        });					
-			    });
-		    }else{
-				resetChannelVisibility(channelInfo, false);
-			}
-		}
-
-
-	    function resetChannelVisibility(channelInfo, all) {
-            const activeServer = channelInfo.querySelector(".server-mark.active");
-	        const activeComplete = channelInfo.querySelector(".setComplete.active");
-	        
-	        if(activeServer && all) activeServer.classList.remove("active");
-	        if(activeComplete && all) activeComplete.classList.remove("active");
-	        	
+	// 특정 세트만 표시하는 함수
+	function toggleSetVisibility(setName, channelInfo, filterUse) {
+	    if (filterUse) {
 	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
-	            item.style.display = "block";
+	            const itemName = item.getAttribute("data-item");
+	            const partOfSet = isPartOfSet(setName, itemName);
+	            item.style.display = partOfSet ? "block" : "none";
 	
-	            item.querySelectorAll(".info-channel").forEach((channel) => {
-				  const server = channel.getAttribute("data-server");
-
-				    // 디버깅용 로그: 각 서버와 display 상태 출력
-					// 기존 display 제거 후 다시 설정
-			        channel.style.removeProperty("display");
-			        channel.style.display = "block";
+	            item.querySelectorAll(".info-channel").forEach(channel => {
+	                channel.style.display = "block";
 	            });
-	        });	        
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo, false);
 	    }
-	    return channelInfoDiv;
-	    
+	}
+	
+	// 특정 서버의 채널만 표시하는 함수
+	function toggleChannelVisibility(setName, server, channelInfo, filterUse) {
+	    if (filterUse) {
+	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	            const itemName = item.getAttribute("data-item");
+	            const partOfSet = isPartOfSet(setName, itemName);
+	            item.style.display = partOfSet ? "block" : "none";
+	
+	            item.querySelectorAll(".info-channel").forEach(channel => {
+	                const channelServer = channel.getAttribute("data-server");
+	                channel.style.display = (channelServer === server) ? "block" : "none";
+	            });
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo, false);
+	    }
+	}
+	
+	// 채널 가시성 리셋 함수
+	function resetChannelVisibility(channelInfo, all) {
+	    const activeServer = channelInfo.querySelector(".server-mark.active");
+	    const activeComplete = channelInfo.querySelector(".setComplete.active");
+	
+	    if (activeServer && all) activeServer.classList.remove("active");
+	    if (activeComplete && all) activeComplete.classList.remove("active");
+	
+	    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	        item.style.display = "block";
+	
+	        item.querySelectorAll(".info-channel").forEach((channel) => {
+	            channel.style.removeProperty("display");
+	            channel.style.display = "block";
+	        });
+	    });
+	}
+
+	function serverMark(e){
+		const serverElement = e.tartget
+		const server = serverElement.getAttribute("data-server");
+        const setName = serverElement.getAttribute("data-set");
+        const channelInfo = e.target.closest(".channel-info");
+        const activeServer = channelInfo.querySelector(".server-mark.active");
+        const activeComplete = channelInfo.querySelector(".setComplete.active");	            
+        let fillterUse = true;
+        
+        if(activeComplete) activeComplete.classList.remove("active");
+        
+        //e.target.classList.toggle("active");	            
+        // 기존 활성화된 server-mark의 active 클래스 제거 (다른 요소일 경우만)	            
+        if (activeServer && activeServer !== e.target) {		            
+            activeServer.classList.remove("active");
+        }else{ //같은 요소이면 취소
+			fillterUse = false;
+		}				
+		
+		//맨 처음 클릭일때
+		if(!activeServer) fillterUse = true;
+		
+        toggleChannelVisibility(setName, server, channelInfo, fillterUse);
+        	           
+        e.target.classList.toggle("active");
+        e.stopPropagation();
 	}
 	
 	//세트 여부 확인
@@ -1270,7 +1417,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	        
 	        // 채널 정보 복제 및 추가
 	        const channelInfoClone = channelInfo.cloneNode(true);
-	        rightLayout.append(channelInfoClone);	        
+	        rightLayout.append(channelInfoClone);
+	        addClickEventsToChannelInfo(channelInfoClone);
 	        
 			// 모든 .color_rect 요소에 툴팁 기능 추가
 			document.querySelectorAll('#itemModal .info-jumoney-name .color_rect').forEach((element) => {
@@ -1331,7 +1479,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	    requestAnimationFrame(async () => {
 	        try {
 			    let imageUrl;
-			    console.log(itemData);
 			    const cacheKey = `${itemName}-${JSON.stringify(itemData)}`;
 			    const fallbackImage = "./cute.png"; // 실패 시 대체 이미지
 			    // 아이템 정보가 있을 때: API URL 사용
@@ -1519,7 +1666,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	    const elementsToHide = [
 	        document.getElementById("captureBtn"),
-	        document.getElementById("captureSaveBtn")
+	        document.getElementById("captureSaveBtn"),
+	        document.getElementById("closeModal")
+	        
 	    ];
 	
 	    // 숨길 요소 임시로 숨기기
@@ -1565,7 +1714,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	document.getElementById("captureSaveBtn").addEventListener("click", async () => {
 	    try {
 	        const dataUrl = await captureImage();
-	        saveImage(dataUrl, "capture.png");
+	        const fileName = generateFileName();
+	        saveImage(dataUrl, fileName);
 	    } catch (err) {
 	        console.error("이미지 저장 실패:", err);
 	        alert("저장에 실패했습니다.");
@@ -1594,6 +1744,229 @@ document.addEventListener("DOMContentLoaded", function () {
 	    return /iP(hone|ad|od)/i.test(navigator.userAgent) ||
 	           (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 	}
+	
+	// 날짜 및 시간 형식 포맷 함수
+	function getCurrentFormattedTime() {
+	    const now = new Date();
+	    const yy = String(now.getFullYear()).slice(-2);
+	    const mm = String(now.getMonth() + 1).padStart(2, '0'); // 월 (01-12)
+	    const dd = String(now.getDate()).padStart(2, '0');      // 일 (01-31)
+	    const hh = String(now.getHours()).padStart(2, '0');     // 시 (00-23)
+	    const min = String(now.getMinutes()).padStart(2, '0');  // 분 (00-59)
+	
+	    return `${yy}${mm}${dd}-${hh}${min}`;
+	}
+	
+	// 여러 hex 값 가져와 결합하는 함수
+	function getHexValues() {
+	     const hexLabels = document.querySelectorAll("#modalItemColors .color-info label.hex" );
+	    const hexValues = Array.from(hexLabels).map(label => label.innerText.trim().replace("#", ""));
+	    return hexValues.join("N"); // N으로 결합
+	}
+	
+	// 파일명 생성 함수
+	function generateFileName() {
+	    // modalItemName 텍스트 가져오기
+	    const itemName = document.getElementById("modalItemName").innerText.trim();
+	
+	    // hex 값 결합
+	    const hexValues = getHexValues();
+	
+	    // 현재 시간 가져오기
+	    const currentTime = getCurrentFormattedTime();
+	
+	    // 파일명 조합
+	    return `${itemName}-${currentTime}-${hexValues}.png`;
+	}
+	
+	async function singleChanneling(e) {
+		const elem = e.currentTarget;
+		const item = elem.closest(".item");  // 해당 img-area가 속한 .item 요소 찾기
+		const item_name = item.querySelector(".item_nm").innerText;
+		Swal.fire({
+		  title: `${item_name} 기준으로 검색합니다.`,
+		  showDenyButton: true,
+		  showCancelButton: true,
+		  confirmButtonText: "현재 서버",
+		  denyButtonText: `전체 서버`
+		}).then(async  (result) => {
+			if( !result.isDismissed ){
+				
+		        const img = elem.querySelector(".api-img");
+		        const qCode = img.getAttribute("data-qcode");  // 아이템 코드 가져오기
+		        const location = item.querySelector(".location_nm");
+		        const npc = location.getAttribute("data-key");  // 선택한 서버 가져오기
+		        let all = false;
+		        
+		        if ( !result.isConfirmed ) all = true;
+		        
+				try {
+			        // 로딩 오버레이 표시
+			        showLoadingOverlay();
+			
+			        // API로 데이터 가져오기
+			        const data = await getAllServersForItem(npc, qCode, all);	
+			        if (!data) return;
+			        
+			        // 초기화: right-layout 내부의 기존 세트 및 채널 정보 제거
+					updateModalTime();
+					
+			        // 지역 이름 설정
+			        const locationName = location.textContent;
+			        modalItemName.textContent = locationName;       
+			
+			        // 이미지 설정
+			        const apiImageSrc = item.querySelector(".api-img").src;
+			        let mabibaseImageSrc = item.querySelector(".mabibase-img").src;
+			       
+			        modalApiImage.src = apiImageSrc;
+			        modalMabibaseImage.src = mabibaseImageSrc;	        
+			        
+			        // 복제된 이미지에 동일한 경로 설정
+			        modalMabibaseImageCopy.src = mabibaseImageSrc;
+			
+			        // 색상 정보 추가
+			        const colorInfo = item.querySelector(".color-info");
+			        if (colorInfo) {
+			            modalItemColors.innerHTML = colorInfo.outerHTML;
+			        } else {
+			            console.warn("색상 정보가 없습니다.");
+			        }	        
+			        // 모달에 데이터 표시
+			        showChannelingModal(data, location.innerText);
+			    } catch (error) {
+			        console.error("채널링 중 에러 발생:", error);
+			        initializeModal();
+			    } finally {
+			        // 로딩 오버레이 숨김
+			        hideLoadingOverlay();
+			    }
+		    }
+	    });
+	}
+	async function getAllServersForItem(npc, qCode, all) {
+	    const itemKey = removeBetweenMarkers(qCode); // 클릭된 이미지 URL에서 key 값 추출
+	    let servers = [document.getElementById("server").value];
+	    if (!itemKey) {
+	        console.error("아이템 qCode를 추출할 수 없습니다.");
+	        return {};
+	    }
+	    
+		if (all) {
+	        servers = Object.keys(server_ch); // 모든 서버 목록 가져오기
+	        maxCompleteCnt = allServerChannelCount();
+	    } else {
+	        maxCompleteCnt = server_ch[servers[0]] - 1;
+	    }
+	    
+	    const groupedItems = {}; // 서버와 채널 정보를 그룹화할 객체
+	    // 모든 서버와 채널에 대해 fetchNpcData 호출
+	    completeCnt = 0;
+	    outerLoop:  // 레이블을 사용하여 외부 반복문까지 탈출할 수 있게 설정
+	    for (const server of servers) {
+	        const maxCh = server_ch[server]; // 해당 서버의 최대 채널 수
+	
+	        for (let ch = 1; ch <= maxCh; ch++) {
+	            if (ch === 11) continue; // 11채널 제외
+	
+	            const data = await fetchNpcData(npc, server, ch); // CPN과 서버, 채널로 API 호출	    
+	            
+	            if (data.error) {
+	                console.error(`Error fetching data for ${server} - ${ch}: ${data.error}`);
+	                break outerLoop;
+	            }
+	
+	            // 아이템의 이미지 URL에서 key 값을 추출하여 매칭
+	            data.forEach(item => {
+	                const itemQValue = extractQValue(item.image_url); // API 데이터의 이미지 URL에서 key 추출
+	
+	                if (itemQValue !== itemKey) return; // key 값이 일치하지 않으면 건너뜀
+	
+	                // 그룹화하여 저장
+	                if (!groupedItems[itemQValue]) groupedItems[itemQValue] = {};
+	
+	                if (!groupedItems[itemQValue][item.item_display_name]) {
+	                    groupedItems[itemQValue][item.item_display_name] = {
+	                        servers: {},
+	                        item_data: item,
+	                    };
+	                }
+	
+	                if (!groupedItems[itemQValue][item.item_display_name].servers[server]) {
+	                    groupedItems[itemQValue][item.item_display_name].servers[server] = [];
+	                }
+	
+	                // 채널 추가
+	                if (
+	                    !groupedItems[itemQValue][item.item_display_name].servers[server].includes(
+	                        ch
+	                    )
+	                ) {
+	                    groupedItems[itemQValue][item.item_display_name].servers[server].push(ch);
+	                }
+	            });
+	        }
+	    }
+	    return groupedItems; // 모든 서버와 채널에 대한 데이터를 반환
+	}
+
+	function showChannelingModal(data, itemName) {
+	    // 기존 내용 초기화
+	    //channelInfoDiv.innerHTML = "";
+	
+	    // 모달의 제목에 아이템 이름 설정
+	    document.getElementById("modalItemName").innerText = itemName;
+	
+	    // 채널 정보가 없을 때 처리
+	    if (data.length === 0) {
+	        channelInfoDiv.innerHTML = "<p>해당 아이템의 채널 정보를 찾을 수 없습니다.</p>";
+	    } else {
+			const sortedItems = sortGroupedItems(data);		
+	        const matchedItemGroup = sortedItems[Object.keys(sortedItems)[0]];
+
+	 		createChannelInfoDiv(matchedItemGroup, true)
+             .then(({ div: channelInfoDiv, data: itemDataList }) => {		        
+		        rightLayout.appendChild(channelInfoDiv); // 채널 정보 추가
+		        
+		        // 추가 작업이 필요하다면 여기서 itemDataList를 활용
+		        populateImageListSample(itemDataList); 
+		    })
+		    .catch((error) => {
+		        console.error("채널 정보를 생성하는 도중 오류가 발생했습니다:", error);
+		    });
+
+	    }
+	
+	    // 모달 표시
+	    modal.style.display = "flex";
+	}
+	
+	function createChannelInfoItem(itemName, servers) {
+	    const itemDiv = document.createElement("div");
+	    itemDiv.classList.add("channel-info-item");
+	
+	    let serverInfoHTML = "";
+	    for (const [serverName, channels] of Object.entries(servers)) {
+	        const channelsStr = channels.join(", ");
+	        serverInfoHTML += `
+	            <span class="info-channel all-server" data-server="${serverName}">
+	                <label class="server-mark ${serverName}"></label>
+	                ${channelsStr}
+	            </span>`;
+	    }
+	
+	    itemDiv.innerHTML = `
+	        <span class="info-jumoney-name">${itemName}</span>
+	        ${serverInfoHTML}
+	    `;
+	    return itemDiv;
+	}
+	
+	// 모달 닫기 이벤트
+	document.getElementById("closeModal").addEventListener("click", () => {
+	    document.getElementById("itemModal").style.display = "none";
+	});
+
 	
     closeModalButton.addEventListener("click", function () {
         modal.style.display = "none";
