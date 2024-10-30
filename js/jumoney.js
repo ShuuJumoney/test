@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	let completeCnt = 0;
 	let maxCompleteCnt = 0;
 	let isDisplaying = false; // 중복 호출 방지 플래그
+	let lastTap = 0; //모바일 더블탭 이벤트
 		
 
 	const server_ch = { "류트": 42, "하프": 24, "울프": 15, "만돌린": 15 };
@@ -219,7 +220,12 @@ document.addEventListener("DOMContentLoaded", function () {
 			
 			//모바일 더블 클릭
 			document.querySelectorAll(".item .img-area").forEach(imgArea => {
-			    imgArea.addEventListener("touchend", singleChanneling)
+				const currentTime = new Date().getTime();
+  				const tapLength = currentTime - lastTap;  	
+  				if (tapLength < 300 && tapLength > 0) {			
+			    	imgArea.addEventListener("touchend", singleChanneling)
+		    	}
+			    lastTap = currentTime;
 			});
 			
 
@@ -1780,6 +1786,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 	
 	async function singleChanneling(e) {
+		e.preventDefault();
 		const elem = e.currentTarget;
 		const item = elem.closest(".item");  // 해당 img-area가 속한 .item 요소 찾기
 		const item_name = item.querySelector(".item_nm").innerText;
