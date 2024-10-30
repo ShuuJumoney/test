@@ -79,7 +79,7 @@ async function createJumoneyImage(itemName, colors, type, backgroundColor) {
   const maxHeight = Math.max(imgA?.height || 0, imgB?.height || 0, imgC?.height || 0);
 
   const canvas = document.createElement('canvas'); // 가상 캔버스 생성
-  const ctx = canvas.getContext('2d', { alpha: true });
+  const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
 
   canvas.width = maxWidth;
   canvas.height = maxHeight;
@@ -110,13 +110,13 @@ async function createJumoneyImage(itemName, colors, type, backgroundColor) {
  * @returns {Promise<HTMLImageElement>}
  */
 function loadImage(src, type) {
-	/*
+
 	const cacheKey = `${type}/${src}`;
 	if (defaultImageCache.has(src)) {
 		// 캐시에 있는 이미지 반환
 		return Promise.resolve(defaultImageCache.get(cacheKey));
 	}
-	*/
+
 	return new Promise((resolve, reject) => {
 		if (!src) return resolve(null);
 		const img = new Image();
