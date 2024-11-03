@@ -1,9 +1,23 @@
+html, body{
+	height: 100%;
+}
 body {
 	display: grid;
    	justify-items: center;
-	touch-action: manipulation; /* 터치 제스처 제한 */
+   	touch-action: manipulation; /* 터치 제스처 제한 */
 }
-
+footer {
+    text-align: center;
+    color: #999;
+    font-size: 11px;
+    height: 40px;
+    position: relative;
+    bottom: 0;
+    margin-top: 10em;
+}
+footer span{
+    color: #cdcdcd;
+}
 #main {
     /*width: calc(240px* 6 + 35px);*/
     width: 100%;
@@ -14,6 +28,10 @@ body {
     image-rendering: pixelated;
     height: 94px;
     text-align: center;
+    cursor: url(../image/mouse_click.png) 13.5 0, auto;
+    display: inline-block;
+    width: 70%;
+    min-width: 150px;
 }
 .api-img {
     image-rendering: pixelated;
@@ -54,19 +72,26 @@ label.rgb {
     float: right;
     text-align: left;
 }
+/*
 div {
     text-align: left;
     width: 90%;
     display: inline-block;
 }
+*/
 .color-info{
 	margin-bottom: 0.5em;
+	width: 90%;
+	display: inline-block;
 }
 p {
     margin: 2px;
     text-align: left;
     display: flex;
     justify-content: space-evenly;
+}
+h2.area-capture{
+	text-align: left;
 }
 .item_nm {
 	margin-bottom: 7px;
@@ -97,6 +122,7 @@ p {
     max-width: 1475px;
     position: relative;
     text-align: right;
+    /* font-family: 'Noto Sans KR'; */
 }
 /*
 #resetTime {
@@ -115,6 +141,7 @@ p {
     width: 100%;
     padding: 100px 0px;
     /*text-align: center;*/
+    font-family: 'Noto Sans KR';
 }
 
 select {
@@ -217,12 +244,19 @@ label.info-jumoney-name {
 span.info-channel {
     /*margin-left: 11px;*/
     margin-left: 3px;
-    font-size: 11pt;
+    font-size: 10pt;
 }
 span.info-channel.all-server{
 	display: block;
 	text-indent: -1.3em;
 	padding-left: 2em;
+	color: #8e8e8e;
+}
+.all-server strong {
+    color: #222;
+    font-weight: 500;
+    text-shadow: 0px 0px 0px #686868;
+    font-size: 11pt;
 }
 .channel-info h4 {
     margin-bottom: 3px;
@@ -230,6 +264,10 @@ span.info-channel.all-server{
     text-align: center;
     font-size: 11pt;
     cursor: pointer;
+    /* font-family: 'Noto Sans Kr'; */
+    transform: skew(-0.1deg);
+    color: #333;
+    font-size: 14px;
 }
 .item.nomatch-addItem {
    /*padding: 50% 0px;*/
@@ -287,20 +325,24 @@ span.info-channel.all-server{
 }
 .channel-info{
 	padding-bottom: 7px;
+    width:90%;
+    display: inline-block;
 }
 .location-area{
 	width: 100%;
 }
 #time-area{
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-    width: 100%;
-    max-width: 1475px;
-    left: 50%;
-    transform: translate(-50%, 0%);
-    padding-left: 1em;
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+	width: 100%;
+	max-width: 1475px;
+	left: 50%;
+	transform: translate(-50%, 0%);
+	padding-left: 1em;
+	text-align: left;
+	font-family: 'Noto Sans KR';
 }
 p.set-info {
     margin: 0px;
@@ -422,6 +464,12 @@ span#loadingClose {
     background: #f0f0f0;
 }
 
+.modal-open {
+	/*right: 2.1em;*/
+}
+.qCode-copy{
+	display:none;
+}
 /* 모달 관련 CSS */
 /* 모달 오버레이 */
 
@@ -450,6 +498,7 @@ span#loadingClose {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     max-width: 800px;
     width: 55%;
+    position: relative;
 }
 
 /* 모달 헤더 */
@@ -586,6 +635,14 @@ span#loadingClose {
     overflow: hidden;
 }
 
+#curDate{
+    position: absolute;
+    bottom: -16px;
+    right: 0px;
+    font-size: 10px;
+    color: #555;
+    padding-bottom: 0.3em;
+}
 
 #itemModal .loading-spinner, .loading-spinner {
     border: 4px solid rgba(0, 0, 0, 0.1);
@@ -614,10 +671,11 @@ span#loadingClose {
   display: none; /* 이미지 로드 전 숨김 */
 }
 
+/*
 #itemModal .setComplete, #itemModal .server-mark, #itemModal h4{
 	cursor: default;
 }
-
+*/
 #modalTime {
 	text-align: left;
     position: absolute;
@@ -655,7 +713,7 @@ label.timeTitle {
 }
 
 /* 화면 너비가 1350px 미만일 때 현재 시간 숨기기 */
-@media (max-width: 1350px) {
+@media (max-width: 1310px) {
     #modal-realTime {
     	opacity: 0;
     	height: 0;
@@ -728,7 +786,8 @@ label.timeTitle {
 }
 
 .img-area .loading-spinner {
-	left: 6.7em;
+    left: calc(50% - 10px);
+    top: 20%;    
 }
 
 .modal-icon {
@@ -815,4 +874,29 @@ input[type="checkbox"]:disabled+.checkmark {
 	display: flex;
     align-items: center;
     justify-content: center;
+}
+.channel-view{
+	display: none;
+}
+.channel-view.view{
+	display: block;
+}
+.image-container2 img:not(.default_jumoney) {
+    cursor: pointer;
+}
+
+.ico-view{
+    position: absolute;
+    font-size: 10px;
+    color: #717171;
+    line-height: 18px;
+    padding-left: 5px;
+}
+
+.ico-up-triangle:before {
+    content: "\25B2";
+}
+
+.ico-down-triangle:before {
+    content: "\25BC";
 }
