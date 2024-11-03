@@ -1,6 +1,6 @@
 const BASE_URL = "https://shuujumoney.github.io/jumoney/image/jumoney"; //테스트용
 //const BASE_URL = "./image/jumoney"; //배포용
-const defaultImageCache = new Map(); // 이미지 캐시 저장소
+
 const jumoney = { 
 	open : {
 		"튼튼한 달걀 주머니": { A: "open_crops_base.png", B: "", C: "", M1: "open_egg.png", M2: "open_plus_top.png" },
@@ -53,7 +53,6 @@ const jumoney = {
 };
 
 let imgType = "close";
-
 /**
  * 이미지 합성 함수
  * @param {string} itemName - 아이템 이름
@@ -63,6 +62,14 @@ let imgType = "close";
  */
 async function createJumoneyImage(itemName, colors, type, backgroundColor) {
   //console.log(`생성 요청 - 아이템: ${itemName}, 색상: ${colors}, 타입: ${type}`);
+  // 캐시 키 생성
+  const cacheKey = `${itemName}-${colors.join('-')}-${type}-${backgroundColor}`;
+  
+  // 캐시에서 이미지 확인
+  if (defaultImageCache.has(cacheKey)) {
+    return defaultImageCache.get(cacheKey);
+  }
+  
   const validType = type === "close" ? "close" : "open";
   imgType = validType;
   const item = jumoney[validType][itemName];
@@ -104,6 +111,9 @@ async function createJumoneyImage(itemName, colors, type, backgroundColor) {
   if (backgroundColor) {
     setBackgroundColor(ctx, backgroundColor, canvas);
   }
+  
+  // 캐시에 저장
+  window.defaultImageCache.set(cacheKey, canvas.toDataURL('image/png'));
 
   return canvas.toDataURL('image/png');
 }

@@ -25,7 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	let maxCompleteCnt = 0;
 	let isDisplaying = false; // 중복 호출 방지 플래그
 	let lastTap = 0; //모바일 더블탭 이벤트
-		
 
 	const server_ch = { "류트": 42, "하프": 24, "울프": 15, "만돌린": 15 };
 	//전서버 전지역 채널링 호출 횟수 (41 + 23 + 14 + 14) × 18 = 1656회
@@ -100,6 +99,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	const localServer = localStorage.getItem("server");
 	let localChannel = localStorage.getItem("channel");
 	const localNpc = localStorage.getItem("npc");
+	const localShareKey = localStorage.getItem("shareKey");
+	const checkbox = document.getElementById('shareKey');
+	
 	if (localServer) 
 	  document.getElementById("server").value = localServer;
 	
@@ -109,20 +111,24 @@ document.addEventListener("DOMContentLoaded", function () {
 	if (localNpc)
 	  document.getElementById("npc_nm").value = localNpc;
 	  
+	if(localShareKey){
+	  checkbox.checked = true; // 체크박스 체크 설정
+	  SHARE_KEY = true;		
+	}
+	  
 	// 체크박스의 상태가 변경될 때 SHARE_KEY 값을 변경합니다.
-	/*
-	const checkbox = document.getElementById('shareKey');
 
 	checkbox.addEventListener('change', function() {
 		if (checkbox.checked) {
 			SHARE_KEY = true;  // 체크되면 true
+			localStorage.setItem("shareKey", true);
 			console.log('공용키 사용 활성화: ', SHARE_KEY);
 		} else {
 			SHARE_KEY = false;  // 체크 해제하면 false
+			localStorage.setItem("shareKey", false);
 			console.log('공용키 사용 비활성화: ', SHARE_KEY);
 		}
-	});	  
-	*/
+	});	 
 	
 	setChannel(); //localServer 설정 한 후에		
 	prevNextCh();
@@ -1284,7 +1290,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function fetchNpcData(npc, server, channel) {
     	const cacheKey = `${npc}_${server}_${channel}`; // 중복 호출을 피하기 위한 캐시키 생성 //호출 횟수 아껴야함...ㅠㅠ
         let url = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${npc}&server_name=${server}&channel=${channel}`;
-        //if(SHARE_KEY) url = `https://jumoney-shuus-projects-28c29ca9.vercel.app/api/fetchNpcData?npc=${npc}&server=${server}&channel=${channel}`;
+        if(SHARE_KEY) url = `https://shuuryn.com/nexon_api.php?npc=${npc}&server=${server}&channel=${channel}`;
 
     	//리셋 시간되면 무조건 캐시 초기화 밑 tables 초기화
     	if(isResetNeeded()){
@@ -1320,7 +1326,6 @@ document.addEventListener("DOMContentLoaded", function () {
         
         document.getElementById("curCallState").innerText = `API 호출: ${cacheKey}`;        
         //console.log(`API 호출: ${cacheKey}`);
-        
         try {
 			// API 키가 "test"로 시작하면 호출 제한 적용
 		    if (API_KEY.startsWith("test") && !SHARE_KEY) {
@@ -1334,9 +1339,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }else{
 				response = await fetch(url);
     			data = await response.json();
-    			data = data.data; 			
-			}	
-            	
+			}
+			
+            if(API_KEY && data.error) response.ok = false;
             if (!response.ok || !data.shop) {
 				const errorName = data.error.name;
 				const errorMessage = getErrorMessage(errorName);
@@ -1346,8 +1351,7 @@ document.addEventListener("DOMContentLoaded", function () {
             	document.getElementById("results").innerHTML = errorName+"<br/>"+errorMessage[0] + "<br/>" + errorMessage[1];
             	return data;
             }else{
-				document.getElementById("results").innerHTML = "";	
-			
+				document.getElementById("results").innerHTML = "";			
             
 	            //리셋 시간 변경 됐을 경우만 저장
 	            if (!nextResetTime || new Date(data.date_shop_next_update) > nextResetTime ) {
@@ -1369,6 +1373,7 @@ document.addEventListener("DOMContentLoaded", function () {
             //checkSync(data.date_inquire); // 서버시간 동기화
             
         } catch (error) {
+			console.log(error);
             console.error(`API 호출 실패: ${error.message}`);
 	        // 실패 시 상태 초기화
 	        inProgressCalls.delete(cacheKey); 
@@ -1575,7 +1580,6 @@ document.addEventListener("DOMContentLoaded", function () {
 		    
 			    if (imageCache.has(cacheKey)) {
 					imageUrl = imageCache.get(cacheKey);
-					//console.log("캐시된 이미지 사용");
 					// **캐시된 이미지가 기본 이미지일 경우 클래스 추가**
 		            if (imageUrl.includes(defaultImagePath)) {
 		                imgElement.classList.add("default_jumoney");
@@ -1917,6 +1921,7 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	
 	// 클립보드에 이미지 복사
 	document.getElementById("captureBtn").addEventListener("click", async () => {
+		/*
 		 try {
 	        //const blob = await captureImage2();
 	        const dataUrl =  await captureImage2();
@@ -1944,7 +1949,8 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	        console.error("클립보드 복사 실패:", err);
 	        alert("복사에 실패했습니다.");
 	    }
-	    /*
+	   */
+	   
 	    try {
 	        const dataUrl = await captureImage();
 	        const blob = await (await fetch(dataUrl)).blob();
@@ -1955,7 +1961,6 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	        console.error("클립보드 복사 실패:", err);
 	        alert("복사에 실패했습니다.");
 	    }
-	    */
 	});
 	
 	// 이미지 파일로 저장 (iOS/Safari 호환)
