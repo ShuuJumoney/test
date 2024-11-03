@@ -1830,7 +1830,7 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	    });
 	}
 	
-	// 캡처 로직 (모달 내용을 이미지로 캡처)
+	// 캡처 로직 (모달 내용을 이미지로 캡처) //화질이 너무 꺠지는 문제가 있음
 	async function captureImage2() {
 	    const captureTarget = document.querySelector(".modal-content");
 	
@@ -1862,13 +1862,17 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	
 	    // 숨긴 요소 복원
 	    elementsToHide.forEach(el => el.style.display = "");
-	
+	     // 캔버스를 데이터 URL로 변환
+    	const dataUrl = canvas.toDataURL("image/png", 1.0); // 품질 1.0은 최고 품질
+		return dataUrl;
 	    // 캔버스를 Blob으로 변환
+	    /*
 	    return new Promise((resolve) => {
 	        canvas.toBlob(blob => {
 	            resolve(blob);
 	        });
 	    });
+	    */
 	}
 
 	
@@ -1914,7 +1918,10 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	// 클립보드에 이미지 복사
 	document.getElementById("captureBtn").addEventListener("click", async () => {
 		 try {
-	        const blob = await captureImage2();
+	        //const blob = await captureImage2();
+	        const dataUrl =  await captureImage2();
+	        const response = await fetch(dataUrl);
+        	const blob = await response.blob();
 	
 	        if (blob) {
 	            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
