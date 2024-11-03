@@ -98,9 +98,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	const localApiKey = localStorage.getItem("apiKey");		
 	const localServer = localStorage.getItem("server");
-	const localChannel = localStorage.getItem("channel");
+	let localChannel = localStorage.getItem("channel");
 	const localNpc = localStorage.getItem("npc");
-	
 	if (localServer) 
 	  document.getElementById("server").value = localServer;
 	
@@ -153,6 +152,11 @@ document.addEventListener("DOMContentLoaded", function () {
 			let option = document.createElement('option');
 			option.value = i;
 			option.text = `${i}채`;
+			if (localChannel == i){
+				//console.log(`localChannel[${localChannel}], i[${i}]`);
+				option.setAttribute("selected", true);
+			}
+				
 			chSelect.appendChild(option);
 		}
 				
@@ -205,11 +209,11 @@ document.addEventListener("DOMContentLoaded", function () {
 				elem.addEventListener('click', toggleLocationHidden);
 			});				
 			
-			document.querySelectorAll('.icon-copy').forEach(elem => {		
+			document.querySelectorAll('.qCode-copy').forEach(elem => {		
 				elem.addEventListener('click', copyQcode);
 			});
 			
-			document.querySelectorAll(".icon-external-link").forEach(button => {
+			document.querySelectorAll(".modal-open").forEach(button => {
 				button.addEventListener("click", channelModal)
 			});
 			
@@ -218,32 +222,9 @@ document.addEventListener("DOMContentLoaded", function () {
 			    imgArea.addEventListener("dblclick", singleChanneling)
 			});
 			
-			//모바일 더블 클릭
-			/*
-			document.querySelectorAll(".item .img-area").forEach(imgArea => {
-				const currentTime = new Date().getTime();
-  				const tapLength = currentTime - lastTap;  	
-  				if (tapLength < 300 && tapLength > 0) {			
-			    	imgArea.addEventListener("touchend", singleChanneling)
-		    	}
-			    lastTap = currentTime;
-			});
-			*/
+			//모바일 더블 클릭			
 			document.querySelectorAll(".item .img-area").forEach((imgArea) => {
-			  imgArea.addEventListener( "touchend",  (e) => {
-			      const currentTime = new Date().getTime();
-			      const tapLength = currentTime - lastTap;
-			
-			      if (tapLength < 300 && tapLength > 0) {
-			        e.preventDefault(); // 기본 확대/축소 방지
-			        console.log("모바일 더블탭 감지됨");
-			        singleChanneling(e);
-			      }
-			
-			      lastTap = currentTime;
-			    },
-			    { passive: false } // passive: false 설정
-			  );
+			  imgArea.addEventListener("touchend", handleTouchEnd, { passive: false });
 			});
 
 	        console.log('주머니 리스트 생성 완료');
@@ -359,8 +340,8 @@ document.addEventListener("DOMContentLoaded", function () {
 			pouchOrder[count] = item_nm;
 			
 			table += `<div class="item">`; //<span class="icon icon-repeat channeling"></span>`;
-			table += `<span class="icon icon-copy"></span>`;
-			table += `<span class="icon icon-external-link" style="right: 2.1em;"></span>`;
+			table += `<span class="icon icon-copy qCode-copy"></span>`;
+			table += `<span class="icon icon-external-link modal-open"></span>`;
 			table += `<h3 class="location_nm hidden" data-key="${npc}">${location_nm}</h3>`
 			//table += `<img src="${url}" alt="${item_nm}" class="api-img"><label class="item_nm">${item_nm}</label></div>`;
 			table += `<div class="img-area"><div class="loading-spinner" data-idx="${count}"></div>`;
@@ -444,6 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	document.getElementById("server").addEventListener("change", function() {
 		const server = this.value; // 선택한 서버 가져오기
 		localStorage.setItem("server", server); // 로컬 스토리지에 저장
+		localChannel = 1; //서버 선택하면 무조건 초기화
 	  	setChannel();
 	});
 	
@@ -453,7 +435,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		getNpcData();
 	});
 	
-	document.getElementById("ch").addEventListener("change", getNpcData);	
+	//document.getElementById("ch").addEventListener("change", getNpcData);	
 	document.getElementById("setApiKey").addEventListener("click", function() {
 		API_KEY = document.getElementById("apiKey").value;
 		getNpcData();
@@ -466,9 +448,10 @@ document.addEventListener("DOMContentLoaded", function () {
 	});
 
 	// 채널 입력 필드에 이벤트 리스너 추가
-	document.getElementById("ch").addEventListener("change", function() {
+	document.getElementById("ch").addEventListener("change", function(e) {
 		const channel = this.value; // 입력값 가져오기
-		localStorage.setItem("channel", channel); // 로컬 스토리지에 저장
+		if( !e.detail ) localStorage.setItem("channel", channel); // 로컬 스토리지에 저장
+		getNpcData();
 	});	
 	
 	// 11채널 제외하고 한 지역의 총 호출 횟수 계산
@@ -488,15 +471,17 @@ document.addEventListener("DOMContentLoaded", function () {
 		const selectBox = document.getElementById('ch');
 		const prevButton = document.getElementById('prev');
 		const nextButton = document.getElementById('next');
-
+			
 		prevButton.addEventListener('click', function () {
+				
 			selectBox.selectedIndex = selectBox.selectedIndex === 0 ? selectBox.options.length - 1 : selectBox.selectedIndex - 1;
-			selectBox.dispatchEvent(new Event('change'));
+			selectBox.dispatchEvent(new CustomEvent('change', { detail: {non_select: true }}));
+   
 		});
 
 		nextButton.addEventListener('click', function () {
 			selectBox.selectedIndex = selectBox.selectedIndex === selectBox.options.length - 1 ? 0 : selectBox.selectedIndex + 1;
-			selectBox.dispatchEvent(new Event('change'));
+			selectBox.dispatchEvent(new CustomEvent('change', { detail: {non_select: true }}));
 		});
 	}
 	
@@ -509,9 +494,9 @@ document.addEventListener("DOMContentLoaded", function () {
 		prevButton.addEventListener('click', function () {
 			const index = selectBox.selectedIndex;
 			const options = selectBox.options;
-			
+		
 			//전체는 마을 버튼 이동에서 못하게
-			selectBox.selectedIndex = index === 1 ? options.length - 1 : index - 1;
+			selectBox.selectedIndex = index === 0 ? options.length - 1 : index - 1;
 			selectBox.dispatchEvent(new Event('change'));
 		});
 
@@ -527,6 +512,17 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	//해당 지역 전체 채널링 - 단독이랑도 섞으면
 	async function checkSetAllServers(all) {
+		
+		if(isResetNeeded()){
+			Swal.fire({
+			  icon: "error",
+			  title: "실패",
+			  html: "리셋 시간이 지나 불러올 수 없습니다.<br/>팔레트를 다시 조회 후 시도해주세요."
+			});
+			
+			return;
+		}
+		
 	    if (isCheckingServers) {
 	        console.log("이미 서버 확인 중입니다. 중복 실행 방지.");
 	        return; // 중복 실행 방지
@@ -783,24 +779,52 @@ document.addEventListener("DOMContentLoaded", function () {
 			});
 			
 			document.querySelectorAll('.icon-copy').forEach(elem => {
-				elem.removeEventListener('click', copyQcode)		
+				elem.removeEventListener('click', copyQcode);	
 				elem.addEventListener('click', copyQcode);
 			});	
 			
-			document.querySelectorAll(".icon-external-link").forEach(button => {
-				button.removeEventListener('click', channelModal)
-				button.addEventListener("click", channelModal)				
+			document.querySelectorAll(".modal-open").forEach(button => {
+				button.removeEventListener('click', channelModal);
+				button.addEventListener("click", channelModal);		
 			});
+			
+			
+			// .item 아래에 있는 .img-area에만 더블 클릭 이벤트 리스너 추가
+			document.querySelectorAll(".item .img-area").forEach(imgArea => {
+				imgArea.removeEventListener('dblclick', singleChanneling);
+			    imgArea.addEventListener("dblclick", singleChanneling);
+			});
+			
+			//모바일 더블 클릭			
+			document.querySelectorAll(".item .img-area").forEach((imgArea) => {
+			  imgArea.removeEventListener("touchend", handleTouchEnd, { passive: false });
+			  imgArea.addEventListener("touchend", handleTouchEnd, { passive: false });
+			});
+
+			
 		}finally{
         	isDisplaying = false; // 함수 종료 시 플래그 해제    
 		}	
-   	}	
+   	}
+   	
+   	//모바일 더블탭
+   	function handleTouchEnd(e) {
+	  const currentTime = new Date().getTime();
+	  const tapLength = currentTime - lastTap;
+	
+	  if (tapLength < 300 && tapLength > 0) {
+	    e.preventDefault(); // 기본 확대/축소 방지
+	    singleChanneling(e);
+	  }
+	
+	  lastTap = currentTime;
+	}
    	
 	// 채널 정보 DIV 생성 함수
 	async function createChannelInfoDiv(itemGroup, returnObj) {
 	    const channelInfoDiv = document.createElement("div");
 	    channelInfoDiv.classList.add("channel-info");
-	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info">채널링 정보</h4>`;
+	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info">채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
 	    let itemDataList = [];
 	    
 	    const { serverSetStatus, integratedSets, flowerBasketOnly } = checkSetCompletionByServer(itemGroup);
@@ -818,17 +842,23 @@ document.addEventListener("DOMContentLoaded", function () {
 	    if (flowerBasketInfo) {
 	        channelInfoDiv.innerHTML += `<p class="set-info">${flowerBasketInfo}</p>`;
 	    }
-	
+		
+	    const channelView = document.createElement("div");
+	    channelView.classList.add("channel-view");
+	    //channelView.style.display = "none";
+	    
 	    for (const [itemName, { servers, item_data }] of Object.entries(itemGroup)) {
 	        const itemInfo = await generateItemInfo(itemName, servers, item_data, returnObj, itemDataList);
-	        channelInfoDiv.innerHTML += itemInfo;
+	        channelView.innerHTML += itemInfo;
 	    }
-	
+	    
+	    channelInfoDiv.append(channelView);
 	    // 클릭 이벤트 핸들러 등록
 	    addClickEventsToChannelInfo(channelInfoDiv);
 	
 	    if (returnObj) return { div: channelInfoDiv, data: itemDataList };
 	    return channelInfoDiv;
+	    //return channelInfoDiv;
 	}
 	
 	// 서버 세트 정보 생성 함수
@@ -881,8 +911,11 @@ document.addEventListener("DOMContentLoaded", function () {
 	    if (returnObj) itemDataList.push({ dataItem: itemName, colorData: `${color.A.hex}, ${color.B.hex}, ${color.C.hex}` });
 	
 	    for (const [server, chList] of Object.entries(servers)) {
-	        itemInfo += `<span class="info-channel all-server" data-server="${server}">
-	            <label class="server-mark ${server}"></label>${chList.join(", ")}</span>`;
+			const firstChannel = `<strong>${chList[0]}</strong>`;
+        	const remainingChannels = chList.slice(1).length > 0 ? `, ${chList.slice(1).join(", ")}` : "";
+	        
+       		itemInfo += `<span class="info-channel all-server" data-server="${server}">
+            	<label class="server-mark ${server}"></label>${firstChannel}${remainingChannels}</span>`;
 	    }
 	
 	    return itemInfo + "</p>";
@@ -899,7 +932,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	    });
 	
 	    channelInfoDiv.querySelector(".toggle-all-info").addEventListener("click", (e) => {
-	        resetChannelVisibility(e.target.closest(".channel-info"));
+	        resetChannelVisibility(e.target.closest(".channel-info"), true);
 	    });
 	}
 	
@@ -973,7 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	    }
 	}
 	
-	// 채널 가시성 리셋
+	// 채널 가시성 리셋 //안쓰는거 같은데
 	function resetChannelVisibility(channelInfo) {
 	    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
 	        item.style.display = "block";
@@ -1045,6 +1078,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	// 특정 세트만 표시하는 함수
 	function toggleSetVisibility(setName, channelInfo, filterUse) {
+		viewChannelView(channelInfo);
 	    if (filterUse) {
 	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
 	            const itemName = item.getAttribute("data-item");
@@ -1062,6 +1096,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	// 특정 서버의 채널만 표시하는 함수
 	function toggleChannelVisibility(setName, server, channelInfo, filterUse) {
+		viewChannelView(channelInfo);
 	    if (filterUse) {
 	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
 	            const itemName = item.getAttribute("data-item");
@@ -1078,11 +1113,36 @@ document.addEventListener("DOMContentLoaded", function () {
 	    }
 	}
 	
+	function toggleChannelView(channelInfo){
+		const ch_view = channelInfo.querySelector(".channel-view");
+		const icon_view = channelInfo.querySelector(".ico-view");
+		
+		ch_view.classList.toggle("view");
+		
+		if(icon_view){
+			if(ch_view.classList.contains("view")) {
+				icon_view.classList.remove("ico-up-triangle");
+				icon_view.classList.add("ico-down-triangle");
+			}else{
+				icon_view.classList.add("ico-up-triangle");
+				icon_view.classList.remove("ico-down-triangle");
+			}
+		}
+	}
+	
+	
+	function viewChannelView(channelInfo){
+		const channelView = channelInfo.querySelector(".channel-view");
+		if( !channelView.classList.contains("view") ) channelView.classList.add("view");
+	}
+	
 	// 채널 가시성 리셋 함수
 	function resetChannelVisibility(channelInfo, all) {
 	    const activeServer = channelInfo.querySelector(".server-mark.active");
 	    const activeComplete = channelInfo.querySelector(".setComplete.active");
-	
+	    
+	    
+	    if (all) toggleChannelView(channelInfo);
 	    if (activeServer && all) activeServer.classList.remove("active");
 	    if (activeComplete && all) activeComplete.classList.remove("active");
 	
@@ -1159,7 +1219,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	        return null; // 오류 시 null 반환
 	    }
 	    
-	    const location_nm = areaCaptureElement.innerText;
+	    const location_nm = areaCaptureElement.innerText;	    
+	    const npc = areaCaptureElement.closest(".location-area").getAttribute("data-npc");
 	    
 	    let color = await decodeGivenColorQuery(qValue); // 비동기 호출
 	        color = formatColorValuesWithPlaceholder(color, qValue);
@@ -1167,9 +1228,9 @@ document.addEventListener("DOMContentLoaded", function () {
    		//const mabibaseUrl = `${jumoney_url}${jumoney_key2[firstKey]}?colors=${getUrlColor(color)}" class="mabibase-img" onerror="this.src='./cute.png'` || './cute.png'; // Mabibase 이미지 URL
 	    
 	    let html = `
-	        <span class="icon icon-copy" data-qvalue="${qValue}" title="복사"></span>
-	        <span class="icon icon-external-link" style="right: 2.1em;" title="모달"></span>
-	        <h3 class="location_nm hidden">${location_nm}</h3>	        
+	        <span class="icon icon-copy qCode-copy" data-qvalue="${qValue}" title="복사"></span>
+	        <span class="icon icon-external-link modal-open" title="모달"></span>
+	        <h3 class="location_nm hidden" data-key="${npc}">${location_nm}</h3>	        
 	        <div class="img-area">
 	        <img src="" alt="${firstKey}" class="api-img" data-qCode="${qValue}" onerror="this.src='${url}'">
 	        <img src="${url}" alt="${firstKey}" class="api-img-org" style="display:none;">
@@ -1181,7 +1242,8 @@ document.addEventListener("DOMContentLoaded", function () {
 		newItem.innerHTML = html;
 		
 		//채널 정보 추가
-	    const channelInfoDiv = await createChannelInfoDiv(itemGroup);
+		
+	    const channelInfoDiv = await createChannelInfoDiv(itemGroup);	    
 	    newItem.appendChild(channelInfoDiv);
 	    
 	     // 'open'과 'close' 이미지를 병렬로 생성
@@ -1223,14 +1285,6 @@ document.addEventListener("DOMContentLoaded", function () {
     	const cacheKey = `${npc}_${server}_${channel}`; // 중복 호출을 피하기 위한 캐시키 생성 //호출 횟수 아껴야함...ㅠㅠ
         let url = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${npc}&server_name=${server}&channel=${channel}`;
         //if(SHARE_KEY) url = `https://jumoney-shuus-projects-28c29ca9.vercel.app/api/fetchNpcData?npc=${npc}&server=${server}&channel=${channel}`;
-		// 이미 진행 중인 호출인지 확인
-		if (inProgressCalls.has(cacheKey)) {
-			console.log(`이미 진행 중인 호출: ${cacheKey}`);
-			return; // 중복 호출 방지
-		}
-        
-  		// 호출 진행 중임을 기록
- 		inProgressCalls.add(cacheKey);
 
     	//리셋 시간되면 무조건 캐시 초기화 밑 tables 초기화
     	if(isResetNeeded()){
@@ -1238,9 +1292,17 @@ document.addEventListener("DOMContentLoaded", function () {
 			dataCache = {};
 			imageCache = new Map();
 		}
-    	
     	// 리셋 시간이 지나지 않았고 캐시가 존재하면 재사용
         else if (dataCache[cacheKey] ) {
+			// 이미 진행 중인 호출인지 확인
+			if (inProgressCalls.has(cacheKey)) {
+				console.log(`이미 진행 중인 호출: ${cacheKey}`);
+				return; // 중복 호출 방지
+			}
+		
+	  		// 호출 진행 중임을 기록
+	 		inProgressCalls.add(cacheKey);
+	        
 			//간혹 리셋 되었는데 캐시된 데이터 사용한다는 로그가 뜨며 리스트 생성 안하는 증상 방지
 			if( dataCache[cacheKey] ) { //데이터가 없다면 다시 불러오기
 	            console.log(`캐시된 데이터 사용: ${cacheKey}`);
@@ -1250,12 +1312,14 @@ document.addEventListener("DOMContentLoaded", function () {
 	            setCompleteCnt();
 	            
 	            inProgressCalls.delete(cacheKey); // 진행 중 상태 해제
+	            document.getElementById("results").innerHTML = "";
 	            return dataCache[cacheKey];
             }
-        }
+        }		
+    	
         
         document.getElementById("curCallState").innerText = `API 호출: ${cacheKey}`;        
-        console.log(`API 호출: ${cacheKey}`);
+        //console.log(`API 호출: ${cacheKey}`);
         
         try {
 			// API 키가 "test"로 시작하면 호출 제한 적용
@@ -1419,11 +1483,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
      
         // 채널 정보 추가 (append 방식)
-        const channelInfo = item.querySelector(".channel-info");
+        const channelInfo = item.querySelector(".channel-info");        
         let itemDataList = []; // itemDataList 초기화
         
 		if (channelInfo) {
-	        const channelItems = channelInfo.querySelectorAll(".channel-info-item");
+	        const channelItems = channelInfo.querySelectorAll(".channel-info-item");	        
 	
 	        itemDataList = Array.from(channelItems).map((channelItem) => {
 	            const dataItem = channelItem.getAttribute("data-item"); // data-item 값 추출
@@ -1440,6 +1504,9 @@ document.addEventListener("DOMContentLoaded", function () {
 	        
 	        // 채널 정보 복제 및 추가
 	        const channelInfoClone = channelInfo.cloneNode(true);
+	        const channelView = channelInfoClone.querySelector(".channel-view");
+	        channelView.style.display = "block";
+	        channelInfoClone.querySelector(".ico-view").remove();
 	        rightLayout.append(channelInfoClone);
 	        addClickEventsToChannelInfo(channelInfoClone);
 	        
@@ -1561,9 +1628,10 @@ document.addEventListener("DOMContentLoaded", function () {
 	    const now = new Date(); // 현재 시간	    
 	    const resetTime = document.getElementById('resetTime').textContent; // 리셋 시간 파싱
 	
-	    // 현재 시간 표시 (한국 시간 기준)
-	    const { time: currentTimeFormatted } = convertToKST(now.toISOString());
+	    // 현재 시간 표시 (한국 시간 기준) 
+	    const { time: currentTimeFormatted, date: curDate} = convertToKST(now.toISOString());
 	    document.querySelector('#modal-realTime .set-time').textContent = currentTimeFormatted;
+	    document.getElementById('curDate').textContent = curDate;
 	
 	    // 리셋 시간 표시
 	    document.querySelector('#modal-resetTime .set-time').textContent = resetTime.split("다음 리셋:")[1].trim();
@@ -1589,6 +1657,76 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	        imageListSample.appendChild(setDiv); // 전체 리스트에 세트 추가
 	    };
+		document.querySelectorAll(".image-list-sample .image-container2 img").forEach(img => {
+		    img.addEventListener("click", function () {
+		        if (img.classList.contains("default_jumoney")) {
+		            // default_jumoney 클래스가 있는 경우 아무 작업도 하지 않습니다.
+		            return;
+		        }
+		
+		        const modalMabibaseImageCopy = document.getElementById("modalMabibaseImageCopy");
+		        modalMabibaseImageCopy.src = img.src;
+		    });
+		});
+/*
+document.querySelectorAll('.set-group').forEach((group) => {
+    group.querySelectorAll('.image-container2 img:not(.default_jumoney)').forEach((img) => {
+        // 저장 링크 생성
+        const downloadLink = document.createElement('a');
+        downloadLink.style.display = 'inline-block';
+        downloadLink.className = 'download-link';
+        downloadLink.style.margin = '10px';
+        downloadLink.style.color = 'blue';
+        downloadLink.style.textDecoration = 'underline';
+        downloadLink.innerText = 'Download ' + img.alt;
+        group.appendChild(downloadLink);
+
+        // 이미지 다운로드를 위한 데이터 URL 생성 및 링크 설정
+        img.addEventListener('load', () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const scaleFactor = 2;
+            canvas.width = img.naturalWidth * scaleFactor;
+            canvas.height = img.naturalHeight * scaleFactor;
+            ctx.imageSmoothingEnabled = false; // Disable image smoothing to preserve pixelated style
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            downloadLink.href = dataUrl;
+            downloadLink.download = img.alt + '_scaled.png';
+        });
+
+        // 복사 버튼 생성
+        const copyButton = document.createElement('button');
+        copyButton.innerText = 'Copy ' + img.alt;
+        copyButton.style.margin = '10px';
+        img.addEventListener('dblclick', async (event) => {
+            event.preventDefault();
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const scaleFactor = 2;
+                canvas.width = img.naturalWidth * scaleFactor;
+                canvas.height = img.naturalHeight * scaleFactor;
+                ctx.imageSmoothingEnabled = false; // Disable image smoothing to preserve pixelated style
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(async (scaledBlob) => {
+                    const item = new ClipboardItem({ 'image/png': scaledBlob });
+                    try {
+                        await navigator.clipboard.write([item]);
+                        alert(img.alt + ' copied to clipboard');
+                    } catch (err) {
+                        console.error('Failed to copy: ', err);
+                    }
+                }, 'image/png');
+            } catch (err) {
+                console.error('Clipboard permissions error: ', err);
+            }
+        });
+       // group.appendChild(copyButton);
+    });
+});
+*/
+
 	}	
 	
 	// 두 시간의 차이를 분 단위로 계산하는 함수
@@ -1680,6 +1818,60 @@ document.addEventListener("DOMContentLoaded", function () {
 	    });
 	}
 	
+	// 이미지 로드 완료 대기 함수
+	function ensureImageLoaded2(img) {
+	    return new Promise((resolve) => {
+	        if (img.complete && img.naturalHeight !== 0) {
+	            resolve();
+	        } else {
+	            img.onload = () => resolve();
+	            img.onerror = () => resolve(); // 이미지 로드 실패 시에도 무조건 resolve
+	        }
+	    });
+	}
+	
+	// 캡처 로직 (모달 내용을 이미지로 캡처)
+	async function captureImage2() {
+	    const captureTarget = document.querySelector(".modal-content");
+	
+	    // 레이아웃 렌더링 완료 대기
+	    await new Promise((resolve) => requestAnimationFrame(resolve));
+	
+	    const elementsToHide = [
+	        document.getElementById("captureBtn"),
+	        document.getElementById("captureSaveBtn"),
+	        document.getElementById("closeModal")
+	    ];
+	
+	    // 숨길 요소 임시로 숨기기
+	    elementsToHide.forEach(el => el.style.display = "none");
+	
+	    // 이미지 로드 대기
+	    const images = captureTarget.querySelectorAll("img");
+	    await Promise.all(Array.from(images).map(img => ensureImageLoaded2(img)));
+	
+	    // html2canvas로 캡처
+	    const canvas = await html2canvas(captureTarget, {
+	        scale: 1,
+	        useCORS: true,
+	        backgroundColor: "#FFFFFF",
+	        width: captureTarget.offsetWidth,
+	        height: captureTarget.scrollHeight,
+	        ignoreElements: e => e === document.getElementById("captureBtn")
+	    });
+	
+	    // 숨긴 요소 복원
+	    elementsToHide.forEach(el => el.style.display = "");
+	
+	    // 캔버스를 Blob으로 변환
+	    return new Promise((resolve) => {
+	        canvas.toBlob(blob => {
+	            resolve(blob);
+	        });
+	    });
+	}
+
+	
 	// 캡처 로직 (모달 내용을 이미지로 캡처)
 	async function captureImage() {
 	    const captureTarget = document.querySelector(".modal-content");
@@ -1721,16 +1913,42 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	// 클립보드에 이미지 복사
 	document.getElementById("captureBtn").addEventListener("click", async () => {
+		 try {
+	        const blob = await captureImage2();
+	
+	        if (blob) {
+	            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+	            iziToast.success({
+	                title: '클립보드에 이미지가 복사되었습니다',
+	                message: '',
+	                drag: true,
+	                position: 'topCenter',
+	                targetFirst: true,
+	                timeout: 1000,
+	                progressBar: true,
+	                progressBarColor: '',
+	                progressBarEasing: 'linear',
+	                close: true,
+	            });
+	        } else {
+	            throw new Error("캔버스에서 Blob을 생성할 수 없습니다.");
+	        }
+	    } catch (err) {
+	        console.error("클립보드 복사 실패:", err);
+	        alert("복사에 실패했습니다.");
+	    }
+	    /*
 	    try {
 	        const dataUrl = await captureImage();
 	        const blob = await (await fetch(dataUrl)).blob();
 	
 	        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-	        alert("클립보드에 이미지가 복사되었습니다!");
+        	iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
 	    } catch (err) {
 	        console.error("클립보드 복사 실패:", err);
 	        alert("복사에 실패했습니다.");
 	    }
+	    */
 	});
 	
 	// 이미지 파일로 저장 (iOS/Safari 호환)
@@ -1738,7 +1956,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	    try {
 	        const dataUrl = await captureImage();
 	        const fileName = generateFileName();
-	        saveImage(dataUrl, fileName);
+	        saveImage(dataUrl, fileName);	        
 	    } catch (err) {
 	        console.error("이미지 저장 실패:", err);
 	        alert("저장에 실패했습니다.");
@@ -1758,7 +1976,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	    } else {
 	        document.body.appendChild(link);
 	        link.click();
-	        document.body.removeChild(link);
+	        document.body.removeChild(link);	        
 	    }
 	}
 	
@@ -1827,7 +2045,6 @@ document.addEventListener("DOMContentLoaded", function () {
 				try {
 			        // 로딩 오버레이 표시
 			        showLoadingOverlay();
-			
 			        // API로 데이터 가져오기
 			        const data = await getAllServersForItem(npc, qCode, all);	
 			        if (!data) return;
@@ -1868,7 +2085,18 @@ document.addEventListener("DOMContentLoaded", function () {
 		    }
 	    });
 	}
+	
 	async function getAllServersForItem(npc, qCode, all) {
+		if(isResetNeeded()){
+			Swal.fire({
+			  icon: "error",
+			  title: "실패",
+			  html: "리셋 시간이 지나 불러올 수 없습니다.<br/>팔레트를 다시 조회 후 시도해주세요."
+			});
+			
+			return false;
+		}
+		
 	    const itemKey = removeBetweenMarkers(qCode); // 클릭된 이미지 URL에서 key 값 추출
 	    let servers = [document.getElementById("server").value];
 	    if (!itemKey) {
@@ -1947,10 +2175,14 @@ document.addEventListener("DOMContentLoaded", function () {
 	    } else {
 			const sortedItems = sortGroupedItems(data);		
 	        const matchedItemGroup = sortedItems[Object.keys(sortedItems)[0]];
+	        
 
 	 		createChannelInfoDiv(matchedItemGroup, true)
-             .then(({ div: channelInfoDiv, data: itemDataList }) => {		        
-		        rightLayout.appendChild(channelInfoDiv); // 채널 정보 추가
+             .then(({ div: channelInfoDiv, data: itemDataList }) => {
+	  			channelInfoDiv.querySelector(".ico-view").remove();
+	  			channelInfoDiv.querySelector(".channel-view").style.display = "block";
+	  			//channelInfoDiv.querySelector(".channel-view").classList.remove("channel-view");
+		        rightLayout.appendChild(channelInfoDiv); // 채널 정보 추가		        
 		        
 		        // 추가 작업이 필요하다면 여기서 itemDataList를 활용
 		        populateImageListSample(itemDataList); 

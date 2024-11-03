@@ -15,7 +15,7 @@ const jumoney = {
 		"튼튼한 저가형 가죽 주머니": { A: "open_leather_base_1.png", B: "open_leather_main.png", C: "open_leather_number_1.png", M1: "open_plus_bottom.png" },
 		"튼튼한 일반 가죽 주머니": { A: "open_leather_base_2.png", B: "open_leather_main.png", C: "open_leather_number_2.png", M1: "open_plus_top.png" },
 		"튼튼한 고급 가죽 주머니": { A: "open_leather_base_3.png", B: "open_leather_main.png", C: "open_leather_number_3.png", M1: "open_plus_top.png" },
-		"튼튼한 최고급 가죽 주머니": { A: "open_leather_base_2,3,4.png", B: "open_leather_main.png", C: "open_leather_number_4.png", M1: "open_plus_top.png" },
+		"튼튼한 최고급 가죽 주머니": { A: "open_leather_base_4.png", B: "open_leather_main.png", C: "open_leather_number_4.png", M1: "open_plus_top.png" },
 		"튼튼한 저가형 옷감 주머니": { A: "open_fabric_base_all.png", B: "fabric_main.png", C: "open_fabric_number_1.png", M1: "open_plus_bottom.png" },
 		"튼튼한 일반 옷감 주머니": { A: "open_fabric_base_all.png", B: "fabric_main.png", C: "open_fabric_number_2.png", M1: "open_plus_bottom.png" },
 		"튼튼한 고급 옷감 주머니": { A: "open_fabric_base_all.png", B: "fabric_main.png", C: "open_fabric_number_3.png", M1: "open_plus_bottom.png" },
@@ -52,6 +52,8 @@ const jumoney = {
 	}
 };
 
+let imgType = "close";
+
 /**
  * 이미지 합성 함수
  * @param {string} itemName - 아이템 이름
@@ -62,6 +64,7 @@ const jumoney = {
 async function createJumoneyImage(itemName, colors, type, backgroundColor) {
   //console.log(`생성 요청 - 아이템: ${itemName}, 색상: ${colors}, 타입: ${type}`);
   const validType = type === "close" ? "close" : "open";
+  imgType = validType;
   const item = jumoney[validType][itemName];
   if (!item) throw new Error('아이템을 찾을 수 없습니다!');
 
@@ -87,8 +90,9 @@ async function createJumoneyImage(itemName, colors, type, backgroundColor) {
 
   const newImgA = imgA ? await applyNewColor(imgA, colorA, canvas, ctx) : null;
   const newImgB = imgB ? await applyNewColor(imgB, colorB, canvas, ctx) : null;
-  const newImgC = imgC ? await applyNewColor(imgC, colorC, canvas, ctx) : null;
+  const newImgC = imgC ? await applyNewColor(imgC, colorC, canvas, ctx, true, itemName) : null;
 
+  
   if (newImgA) ctx.drawImage(newImgA, 0, 0);
   if (newImgB) ctx.drawImage(newImgB, 0, 0);
   if (newImgC) ctx.drawImage(newImgC, 0, 0);
@@ -136,7 +140,7 @@ function loadImage(src, type) {
  * @param {CanvasRenderingContext2D} ctx - 캔버스 렌더링 컨텍스트
  * @returns {Promise<HTMLImageElement>} - 색상 변경된 이미지 반환
  */
-async function applyNewColor(image, targetColor, canvas, ctx) {
+async function applyNewColor(image, targetColor, canvas, ctx, isCPart = false, itemName = ''){
   ctx.drawImage(image, 0, 0);
   
   canvas.width = image.width;
@@ -154,9 +158,29 @@ async function applyNewColor(image, targetColor, canvas, ctx) {
     const gOffset = data[i + 1] - 128;
     const bOffset = data[i + 2] - 128;
 
-    data[i] = clamp(targetColor.r + rOffset);
-    data[i + 1] = clamp(targetColor.g + gOffset);
-    data[i + 2] = clamp(targetColor.b + bOffset);  
+    let newR = clamp(targetColor.r + rOffset);
+    let newG = clamp(targetColor.g + gOffset);
+    let newB = clamp(targetColor.b + bOffset);
+    
+	// 조건에 따른 +50 색상 조정
+	if (isCPart && data[i] === 255 && data[i + 1] === 255 && data[i + 2] === 255) {
+		// 가죽 주머니: 고급, 최고급
+		if (itemName.includes('가죽') && /(고급|최고급)/.test(itemName)) {
+		newR = clamp(newR + 30);
+		newG = clamp(newG + 30);
+		newB = clamp(newB + 30);
+		}
+		// 옷감 및 실크 주머니: 일반, 고급, 최고급
+		else if ((itemName.includes('옷감') || itemName.includes('실크')) && /(일반|고급|최고급)/.test(itemName)) {
+		newR = clamp(newR + 30);
+		newG = clamp(newG + 30);
+		newB = clamp(newB + 30);
+		}
+	}
+  
+    data[i] = newR;
+    data[i + 1] = newG;
+    data[i + 2] = newB;
   }
 
   ctx.putImageData(imageData, 0, 0);
@@ -167,6 +191,7 @@ async function applyNewColor(image, targetColor, canvas, ctx) {
     img.onload = () => resolve(img);
   });
 }
+
 
 /**
  * 색상 파싱 함수 (RGB 또는 Hex)
