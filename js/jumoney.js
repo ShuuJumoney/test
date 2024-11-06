@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
+	
+	function Mobile(){
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);}
+	
+    if (Mobile()){// 모바일일 경우
+        
+    } else {// 모바일 외
+        
+    }
+	
 	// URL 변경 후 버전
 	getErinTime(document.getElementById("erinTime"));
 	const locations = {
@@ -111,9 +121,12 @@ document.addEventListener("DOMContentLoaded", function () {
 	if (localNpc)
 	  document.getElementById("npc_nm").value = localNpc;
 	  
-	if(localShareKey){
-	  checkbox.checked = true; // 체크박스 체크 설정
+	if(localShareKey === "true"){
 	  SHARE_KEY = true;		
+	  checkbox.checked = true; // 체크박스 체크 설정
+	}else{
+	  SHARE_KEY = false;	
+	  checkbox.checked = false; // 체크박스 체크 설정
 	}
 	  
 	// 체크박스의 상태가 변경될 때 SHARE_KEY 값을 변경합니다.
@@ -207,8 +220,13 @@ document.addEventListener("DOMContentLoaded", function () {
 	                await getJumoney(result.data, npc);
 	            } else {
 	                return false; // 조건에 맞지 않으면 false 반환
-	            }	            
-				
+	            }
+	            
+	            
+				// .item 아래에 있는 .img-area에만 더블 클릭 이벤트 리스너 추가
+				document.querySelectorAll(".item .img-area").forEach(imgArea => {
+				    imgArea.addEventListener("dblclick", singleChanneling)
+				});				
 			}			
             
 			document.querySelectorAll('.item_nm').forEach(elem => {
@@ -221,11 +239,6 @@ document.addEventListener("DOMContentLoaded", function () {
 			
 			document.querySelectorAll(".modal-open").forEach(button => {
 				button.addEventListener("click", channelModal)
-			});
-			
-			// .item 아래에 있는 .img-area에만 더블 클릭 이벤트 리스너 추가
-			document.querySelectorAll(".item .img-area").forEach(imgArea => {
-			    imgArea.addEventListener("dblclick", singleChanneling)
 			});
 			
 			//모바일 더블 클릭			
@@ -500,9 +513,8 @@ document.addEventListener("DOMContentLoaded", function () {
 		prevButton.addEventListener('click', function () {
 			const index = selectBox.selectedIndex;
 			const options = selectBox.options;
-		
 			//전체는 마을 버튼 이동에서 못하게
-			selectBox.selectedIndex = index === 0 ? options.length - 1 : index - 1;
+			selectBox.selectedIndex = index === 1 ? options.length - 1 : index - 1;
 			selectBox.dispatchEvent(new Event('change'));
 		});
 
@@ -710,8 +722,29 @@ document.addEventListener("DOMContentLoaded", function () {
 	                serverSetStatus[setName].push(server);
 	            }
 	        });
-	    });
+	    });	
 	
+		 // 통합 세트 여부 확인
+	    Object.entries(setDefinitions).forEach(([setName, setItems]) => {
+	        const collectedItems = new Set();
+	
+	        Object.values(serverItems).forEach(items => {
+	            setItems.forEach(item => {
+	                if (items.has(item)) collectedItems.add(item);
+	            });
+	        });
+	
+	        const isAlreadyComplete = Object.keys(serverSetStatus).some(status => status.includes(setName));
+	
+	        if (!isAlreadyComplete && collectedItems.size === setItems.length) {
+	            if (setName === "실크셋" && collectedItems.has("튼튼한 꽃바구니")) {
+	                integratedSets.add("실크셋+");
+	            } else {
+	                integratedSets.add(setName);
+	            }
+	        }
+	    });
+	    /*
 	    // 통합 세트 여부 확인
 	    Object.entries(setDefinitions).forEach(([setName, setItems]) => {
 	        const collectedItems = new Set();
@@ -728,7 +761,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	            integratedSets.add(setName);
 	        }
 	    });
-	    
+	    */
 	    return { serverSetStatus, integratedSets, flowerBasketOnly  };
 	}
 
@@ -832,30 +865,37 @@ document.addEventListener("DOMContentLoaded", function () {
 	    channelInfoDiv.classList.add("channel-info");
 	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info">채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
 	    let itemDataList = [];
-	    
+	    // 첫 번째 채널 정보 계산
+    	const firstChannels = getFirstChannelPerServer(itemGroup);
 	    const { serverSetStatus, integratedSets, flowerBasketOnly } = checkSetCompletionByServer(itemGroup);
-	
-	    const serverSetInfo = generateServerSetInfo(serverSetStatus);
+	    
+		const setsArea = document.createElement("div");		
+	    setsArea.classList.add("sets-area");
+	    
+	    const serverSetInfo = generateServerSetInfo(serverSetStatus, firstChannels);
 	    const integratedSetInfo = generateIntegratedSetInfo(integratedSets);
-	    const flowerBasketInfo = generateFlowerBasketInfo(flowerBasketOnly);
-	
+	    const flowerBasketInfo = generateFlowerBasketInfo(flowerBasketOnly, firstChannels);		
+		
 	    if (serverSetInfo) {
-	        channelInfoDiv.innerHTML += `<p class="set-info">${serverSetInfo}</p>`;
+	        setsArea.innerHTML += `${serverSetInfo}`;
 	    }
 	    if (integratedSetInfo) {
-	        channelInfoDiv.innerHTML += `<p class="set-info">${integratedSetInfo}</p>`;
+	        setsArea.innerHTML += `${integratedSetInfo}`;
 	    }
 	    if (flowerBasketInfo) {
-	        channelInfoDiv.innerHTML += `<p class="set-info">${flowerBasketInfo}</p>`;
+	        setsArea.innerHTML += `${flowerBasketInfo}`;
 	    }
-		
+	   
+		channelInfoDiv.append(setsArea);
 	    const channelView = document.createElement("div");
 	    channelView.classList.add("channel-view");
 	    //channelView.style.display = "none";
 	    
+	    let previousSet = null;
 	    for (const [itemName, { servers, item_data }] of Object.entries(itemGroup)) {
-	        const itemInfo = await generateItemInfo(itemName, servers, item_data, returnObj, itemDataList);
+	        const {itemInfo, currentSet} = await generateItemInfo(itemName, servers, item_data, returnObj, itemDataList, previousSet);
 	        channelView.innerHTML += itemInfo;
+	        previousSet = currentSet; // 업데이트
 	    }
 	    
 	    channelInfoDiv.append(channelView);
@@ -867,50 +907,144 @@ document.addEventListener("DOMContentLoaded", function () {
 	    //return channelInfoDiv;
 	}
 	
+	// 특수 세트 정의
+	function getFirstChannelPerServer(itemGroup) {
+	    const firstChannelMap = {};
+	
+	    // orderedSetDefinitions의 순서를 유지하여 세트 정의
+	    orderedSetDefinitions.forEach(setName => {
+	        firstChannelMap[setName] = {};
+	    });
+	
+	    for (const [itemName, { servers }] of Object.entries(itemGroup)) {
+	        // 세트 여부 확인 함수 사용하여 세트 이름 찾기
+	        const matchingSets = orderedSetDefinitions.filter(set => isPartOfSet(set, itemName));
+
+	        if (matchingSets.length === 0) {
+	            //console.log(`Item '${itemName}' did not match any set.`);
+	            continue; // 세트에 해당하지 않으면 건너뜀
+	        }
+	
+	        matchingSets.forEach(setName => {
+	            // 세트에 해당하는 서버의 첫 번째 채널 정보 저장
+	            for (const [server, channels] of Object.entries(servers)) {
+	                if (!firstChannelMap[setName][server]) {
+	                    firstChannelMap[setName][server] = [];
+	                }
+	                if (channels.length > 0) {
+	                    firstChannelMap[setName][server].push(channels[0]);
+	                }
+	            }
+	        });
+	    }
+	
+	    // 중복 제거 및 모든 세트에 대해 채널 정보를 유지
+	    Object.keys(firstChannelMap).forEach(setName => {
+	        Object.keys(firstChannelMap[setName]).forEach(server => {
+	            firstChannelMap[setName][server] = [...new Set(firstChannelMap[setName][server])];
+	        });
+	    });
+	
+	    // 빈 세트를 제거하여 유효한 세트만 유지하도록 수정
+	    Object.keys(firstChannelMap).forEach(setName => {
+	        if (Object.keys(firstChannelMap[setName]).length === 0) {
+	            delete firstChannelMap[setName];
+	        }
+	    });
+	
+	    //console.log('Generated First Channels:', JSON.stringify(firstChannelMap, null, 2)); // 디버깅용 로그
+	    return firstChannelMap;
+	}
+	
+	// 세트 여부 확인 함수
+	function isPartOfSet(setName, itemName) {
+	    return (
+	        (setName === "실크셋" && setDefinitions["실크셋"].includes(itemName) && itemName !== "튼튼한 꽃바구니") ||
+	        (setName === "실크셋+" && (setDefinitions["실크셋"].includes(itemName) || itemName === "튼튼한 꽃바구니")) ||
+	        (setName === "유사방직" && setDefinitions["방직셋"].includes(itemName) && itemName !== "튼튼한 양털 주머니") ||
+	        (setName === "꽃바구니" && itemName === "튼튼한 꽃바구니") ||
+	        (setDefinitions[setName]?.includes(itemName) && setName !== "실크셋")
+	    );
+	}
+
 	// 서버 세트 정보 생성 함수
-	function generateServerSetInfo(serverSetStatus) {
+	function generateServerSetInfo(serverSetStatus, firstChannels) {
 	    return orderedSetDefinitions
 	        .map(setName => {
 	            if (serverSetStatus[setName]) {
 	                const servers = Object.keys(server_ch)
 	                    .filter(server => serverSetStatus[setName].includes(server))
-	                    .map(server => `<label class="server-mark ${server}" data-set="${setName}" data-server="${server}"></label>`)
+	                    .map(server => {
+	                        const channelNumbers = firstChannels[setName] && firstChannels[setName][server]
+	                            ? firstChannels[setName][server].join(", ")
+	                            : "";
+	                        // 서버 마크 안에 첫 번째 채널 정보 포함
+	                        return `<span class="set-by-server">
+	                        			<label class="server-mark ${server}" data-set="${setName}" data-server="${server}"></label>
+	                        			<span class="server-set-channel">${channelNumbers}</span>
+	                                </span>`;
+	                    })
 	                    .join(" ");
-	                return `<span class="setComplete ${setName}" data-set="${setName}">${setName}</span> ${servers}`;
+	                return `<div class="set-info"><span class="setComplete ${setName}" data-set="${setName}">${setName}</span> ${servers}</div>`;
 	            }
 	            return null;
 	        })
-	        .filter(info => info)
-	        .join("<br/>");
+	        .filter(info => info !== null)
+	        .join("");
 	}
 	
 	// 통합 세트 정보 생성 함수
 	function generateIntegratedSetInfo(integratedSets) {
 	    return orderedSetDefinitions
 	        .filter(setName => integratedSets.has(setName))
-	        .map(setName => `<span class="setComplete ${setName}" data-set="${setName}">${setName}</span>`)
-	        .join(" ");
+	        .map(setName => `
+	        	<div class="set-info">
+	        		<span class="setComplete ${setName}" data-set="${setName}">${setName}</span>
+	        		<span class="set-by-server">
+        				<label class="server-mark 통합" data-set="${setName}" data-server="통합"></label>
+        				<span class="server-set-channel"></span>
+        			</span>
+        		`
+	        )
+	        .join("</div>");
 	}
 	
 	// 꽃바구니 세트 정보 생성 함수
-	function generateFlowerBasketInfo(flowerBasketOnly) {
+	function generateFlowerBasketInfo(flowerBasketOnly, firstChannels) {
 	    if (flowerBasketOnly["꽃바구니"]) {
 	        const servers = Object.keys(server_ch)
 	            .filter(server => flowerBasketOnly["꽃바구니"].includes(server))
-	            .map(server => `<label class="server-mark ${server}" data-set="꽃바구니" data-server="${server}"></label>`)
-	            .join(" ");
-	        return `<span class="setComplete 꽃바구니" data-set="꽃바구니">꽃바구니</span> ${servers}`;
+	            .map(server => {
+	                        const channelNumbers = firstChannels["꽃바구니"] && firstChannels["꽃바구니"][server]
+	                            ? firstChannels["꽃바구니"][server].join(", ")
+	                            : "";
+	                        // 서버 마크 안에 첫 번째 채널 정보 포함
+	                        return `<span class="set-by-server">
+	                        			<label class="server-mark ${server}" data-set="꽃바구니" data-server="${server}"></label>
+	                                	<span class="server-set-channel">${channelNumbers}</span>
+	                                </span>`;
+	                    })
+	                    .join(" ");
+	        return `<div class="set-info"><span class="setComplete 꽃바구니" data-set="꽃바구니">꽃바구니</span> ${servers}</div>`;
 	    }
 	    return "";
 	}
 	
 	// 아이템 정보 생성 함수
-	async function generateItemInfo(itemName, servers, item_data, returnObj, itemDataList) {
+	async function generateItemInfo(itemName, servers, item_data, returnObj, itemDataList, previousSet) {
 	    const qCode = getQcode(item_data.image_url);
 	    let color = await decodeGivenColorQuery(qCode);
 	    color = formatColorValuesWithPlaceholder(color, qCode);
 	
-	    let itemInfo = `<p class="channel-info-item" data-item="${itemName}">
+	    // 구분선 추가를 위한 논리
+	    const currentSet = Object.keys(setDefinitions).find(setName => setDefinitions[setName].includes(itemName));
+	    let itemInfo = '';
+	
+	    if (currentSet && currentSet !== previousSet) {
+	        itemInfo += '<hr class="set-divider">';
+	    }
+	    
+	    itemInfo += `<p class="channel-info-item" data-item="${itemName}">
 	        <label class="info-jumoney-name">${itemName}<span class="color_rect hidden_rect" alt="${color.C.hex}&nbsp;&nbsp;${color.C.rgb}" style="background:${color.C.hex};"></span></label>
 	        <span class="color-03" style="display:none" color-data="${color.A.hex}, ${color.B.hex}, ${color.C.hex}"></span>`;
 	
@@ -924,7 +1058,7 @@ document.addEventListener("DOMContentLoaded", function () {
             	<label class="server-mark ${server}"></label>${firstChannel}${remainingChannels}</span>`;
 	    }
 	
-	    return itemInfo + "</p>";
+	    return {itemInfo: itemInfo + "</p>", currentSet };
 	}
 	
 	// 클릭 이벤트 핸들러 추가 함수
@@ -933,7 +1067,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	        setElement.addEventListener("click", (e) => handleSetClick(e, setElement));
 	    });
 	
-	    channelInfoDiv.querySelectorAll(".server-mark").forEach(serverElement => {
+	    channelInfoDiv.querySelectorAll(".server-mark:not(.통합)").forEach(serverElement => {
 	        serverElement.addEventListener("click", (e) => handleServerClick(e, serverElement));
 	    });
 	
@@ -985,8 +1119,10 @@ document.addEventListener("DOMContentLoaded", function () {
 	    e.stopPropagation();
 	}
 	
-	// 세트 가시성 토글
+	// 세트 가시성 토글\
+	/*
 	function toggleSetVisibility(setName, channelInfo, filterUse) {
+		console.log("use");
 	    if (filterUse) {
 	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
 	            const itemName = item.getAttribute("data-item");
@@ -996,6 +1132,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	        resetChannelVisibility(channelInfo);
 	    }
 	}
+	*/
 	
 	// 서버 가시성 토글
 	function toggleChannelVisibility(setName, server, channelInfo, filterUse) {
@@ -1051,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	        });
 	    });
 	
-	    channelInfoDiv.querySelectorAll(".server-mark").forEach(serverElement => {
+	    channelInfoDiv.querySelectorAll(".server-mark:not(.통합)").forEach(serverElement => {
 	        serverElement.addEventListener("click", (e) => {
 	            const server = serverElement.getAttribute("data-server");
 	            const setName = serverElement.getAttribute("data-set");
@@ -1091,6 +1228,12 @@ document.addEventListener("DOMContentLoaded", function () {
 	            const partOfSet = isPartOfSet(setName, itemName);
 	            item.style.display = partOfSet ? "block" : "none";
 	
+	            // 구분선 처리
+	            const previousElement = item.previousElementSibling;
+	            if (previousElement && previousElement.classList.contains("set-divider")) {
+	                previousElement.style.display = partOfSet ? "block" : "none";
+	            }
+	            
 	            item.querySelectorAll(".info-channel").forEach(channel => {
 	                channel.style.display = "block";
 	            });
@@ -1108,7 +1251,13 @@ document.addEventListener("DOMContentLoaded", function () {
 	            const itemName = item.getAttribute("data-item");
 	            const partOfSet = isPartOfSet(setName, itemName);
 	            item.style.display = partOfSet ? "block" : "none";
-	
+
+	            // 구분선 처리
+	            const previousElement = item.previousElementSibling;
+	            if (previousElement && previousElement.classList.contains("set-divider")) {
+	                previousElement.style.display = partOfSet ? "block" : "none";
+	            }
+  
 	            item.querySelectorAll(".info-channel").forEach(channel => {
 	                const channelServer = channel.getAttribute("data-server");
 	                channel.style.display = (channelServer === server) ? "block" : "none";
@@ -1155,6 +1304,12 @@ document.addEventListener("DOMContentLoaded", function () {
 	    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
 	        item.style.display = "block";
 	
+	        // 구분선 처리
+	        const previousElement = item.previousElementSibling;
+	        if (previousElement && previousElement.classList.contains("set-divider")) {
+	            previousElement.style.display = "block";
+	        }
+	        
 	        item.querySelectorAll(".info-channel").forEach((channel) => {
 	            channel.style.removeProperty("display");
 	            channel.style.display = "block";
@@ -1162,34 +1317,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	    });
 	}
 
-	function serverMark(e){
-		const serverElement = e.tartget
-		const server = serverElement.getAttribute("data-server");
-        const setName = serverElement.getAttribute("data-set");
-        const channelInfo = e.target.closest(".channel-info");
-        const activeServer = channelInfo.querySelector(".server-mark.active");
-        const activeComplete = channelInfo.querySelector(".setComplete.active");	            
-        let fillterUse = true;
-        
-        if(activeComplete) activeComplete.classList.remove("active");
-        
-        //e.target.classList.toggle("active");	            
-        // 기존 활성화된 server-mark의 active 클래스 제거 (다른 요소일 경우만)	            
-        if (activeServer && activeServer !== e.target) {		            
-            activeServer.classList.remove("active");
-        }else{ //같은 요소이면 취소
-			fillterUse = false;
-		}				
-		
-		//맨 처음 클릭일때
-		if(!activeServer) fillterUse = true;
-		
-        toggleChannelVisibility(setName, server, channelInfo, fillterUse);
-        	           
-        e.target.classList.toggle("active");
-        e.stopPropagation();
-	}
-	
 	//세트 여부 확인
 	function isPartOfSet(setName, itemName) {
 	    return (
@@ -1392,6 +1519,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	    	    
 	    if(nextResetTime == null) result = true;
 	    else if ( now >= nextResetTime ) result = true;
+	    
+	    window.defaultImageCache = new Map();
 	  		
 	    return result;
 	}
@@ -1878,8 +2007,85 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	    });
 	    */
 	}
+	/*
+// 캡처한 이미지를 새로운 모달에 띄우기 (CORS 문제 해결을 위해 캔버스 사용)
+document.getElementById("capturePreviewBtn").addEventListener("click", async () => {
+    try {
+        const dataUrl = await captureImage();
 
-	
+        // 이미지를 새로운 모달에 표시하기 위해 캔버스를 사용하여 다시 데이터 URL로 변환
+        const img = new Image();
+        img.src = dataUrl;
+
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+
+            // 캔버스에서 다시 데이터 URL 얻기
+            const newDataUrl = canvas.toDataURL("image/png");
+            openPreviewModal(newDataUrl);
+        };
+    } catch (err) {
+        console.error("이미지 미리보기 실패:", err);
+        alert("이미지 미리보기에 실패했습니다.");
+    }
+});
+
+// 미리보기 모달을 여는 함수
+function openPreviewModal(dataUrl) {
+    // 미리보기 모달 요소 가져오기 (모달을 이미 정의해두었다고 가정)
+    const previewModal = document.getElementById("previewModal");
+    const modalImage = document.getElementById("previewModalImage");
+
+    // 이미지 요소에 캡처한 이미지 설정
+    modalImage.src = dataUrl;
+
+    // 모달 열기
+    previewModal.style.display = "block";
+}
+*/
+/*
+// 캡처한 이미지를 새로운 모달에 띄우기
+document.getElementById("capturePreviewBtn").addEventListener("click", async () => {
+    try {
+        const dataUrl = await captureImage();
+
+        // 새로운 모달 창에 이미지를 띄우기
+        openPreviewModal(dataUrl);
+    } catch (err) {
+        console.error("이미지 미리보기 실패:", err);
+        alert("이미지 미리보기에 실패했습니다.");
+    }
+});
+// 미리보기 모달을 여는 함수
+function openPreviewModal(dataUrl) {
+    // 미리보기 모달 요소 가져오기 (모달을 이미 정의해두었다고 가정)
+    const previewModal = document.getElementById("previewModal");
+    const modalImage = document.getElementById("previewModalImage");
+
+    // 이미지 요소에 캡처한 이미지 설정
+    modalImage.src = dataUrl;
+
+    // 모달 열기
+    previewModal.style.display = "block";
+}
+
+// 모달 닫기 버튼 이벤트
+document.getElementById("closePreviewModal").addEventListener("click", () => {
+    const previewModal = document.getElementById("previewModal");
+    previewModal.style.display = "none";
+});
+
+// 모달 닫기 버튼 이벤트
+document.getElementById("closePreviewModal").addEventListener("click", () => {
+    const previewModal = document.getElementById("previewModal");
+    previewModal.style.display = "none";
+});
+
+*/	
 	// 캡처 로직 (모달 내용을 이미지로 캡처)
 	async function captureImage() {
 	    const captureTarget = document.querySelector(".modal-content");
@@ -1896,6 +2102,10 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	
 	    // 숨길 요소 임시로 숨기기
 	    elementsToHide.forEach(el => el.style.display = "none");
+	    // 캡처 전 대상의 높이 확장
+	    const originalHeight = captureTarget.style.maxHeight ; // 원래 높이를 저장
+	    captureTarget.style.maxHeight = `${captureTarget.scrollHeight}px`; // 스크롤 높이로 설정
+	    captureTarget.style.overflowY = 'hidden'; // 스크롤을 숨김
 	
 	    // 이미지 로드 대기
 	    const images = captureTarget.querySelectorAll("img");
@@ -1910,10 +2120,14 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	            transform: "scale(1)",
 	            transformOrigin: "top left",
 	            backgroundColor: "#FFFFFF"
-	        }
+	        },
+	        useCORS: true // CORS 문제 해결 옵션 추가
 	    });
 	
 	    // 숨긴 요소 복원
+	    // 캡처 후 원래 높이 및 스타일 복원
+   		captureTarget.style.maxHeight = "calc(100vh - 70px)";
+   		captureTarget.style.overflowY = "auto";
 	    elementsToHide.forEach(el => el.style.display = "");
 	
 	    return dataUrl;
@@ -2208,6 +2422,44 @@ document.querySelectorAll('.set-group').forEach((group) => {
 	    // 모달 표시
 	    modal.style.display = "flex";
 	}
+	
+	// 색상 필터링 기능 구현
+	document.getElementById("applyColorFilter").addEventListener("click", function() {
+	    const colorInput = document.getElementById("colorInput").value.trim().toLowerCase();
+	    const tables = document.getElementById("tables");
+	    if (!/^#[0-9a-f]{6}$/.test(colorInput)) {
+	        alert("유효한 색상 코드를 입력해주세요 (#RRGGBB 형식).");
+	        return;
+	    }
+	
+	    // 모든 아이템을 가져와 색상 필터 적용
+	    const items = document.querySelectorAll(".item");
+	    items.forEach(item => {
+	        const colorLabels = item.querySelectorAll(".color-info .hex");
+	        const location_area = item.parentElement.parentElement;
+	        let matchesColor = false;
+	        colorLabels.forEach(label => {
+	            if (label.textContent.toLowerCase() === colorInput) {
+	                matchesColor = true;
+	            }
+	        });
+	
+	        // 색상이 일치하면 표시, 그렇지 않으면 숨김
+	        	               	 
+			if(matchesColor) {
+				location_area.style.display = "block";
+				location_area.classList.add("filters");
+				item.parentElement.classList.add("filter-color");
+				//tables.classList.add("filters");
+				tables.style.display = "flex";
+			}else if(!location_area.classList.contains("filters")){
+					location_area.style.display = "none";
+			}
+			
+			//item.parentElement.parentElement.style.display = matchesColor ? "block" : "none";
+	        item.style.display = matchesColor ? "block" : "none";
+	    });
+	});
 	
 	function createChannelInfoItem(itemName, servers) {
 	    const itemDiv = document.createElement("div");
