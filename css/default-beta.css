@@ -372,8 +372,11 @@ input[type=color], .color-rect {
 		padding: 5px;
 	}
 }
+@media ( max-width : 1460px) {
+	#left {margin-left: 20px;}
+}
 
-@media ( max-width : 1350px) {
+@media ( max-width : 1395px) {
 	body {
 		grid-template-columns:none;
 	}
@@ -382,7 +385,7 @@ input[type=color], .color-rect {
 	}
 }
 
-
+    
 div#saveOption input {
 	margin-right: 5px;
 	text-align: center;
