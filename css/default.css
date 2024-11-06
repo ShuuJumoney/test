@@ -1032,6 +1032,7 @@ itemModal .set-by-server{
     z-index: 1;
     transform: translateY(0);
   	transition: transform 1s ease;
+  	display: none;
 }
 
 
