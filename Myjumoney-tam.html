@@ -4,7 +4,21 @@
   <meta charset="UTF-8">
   <title>주머니 이미지 제작, 저장 테스트</title>
   <style>
- 
+  /*개발용*/
+  /*
+ 	@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap');
+	@import url('https://fastly.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.1/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css');
+	 @font-face {
+	    font-family: 'MabinogiClassicR';
+	    font-weight: normal;
+	    font-style: normal;
+	    font-display: swap;
+	    src: url('https://cdn.jsdelivr.net/gh/fonts-archive/MabinogiClassic/MabinogiClassic.woff2') format('woff2'),
+	         url('https://cdn.jsdelivr.net/gh/fonts-archive/MabinogiClassic/MabinogiClassic.woff') format('woff'),
+	         url('https://cdn.jsdelivr.net/gh/fonts-archive/MabinogiClassic/MabinogiClassic.otf') format('opentype'),
+	         url('https://cdn.jsdelivr.net/gh/fonts-archive/MabinogiClassic/MabinogiClassic.ttf') format('truetype');
+	}
+	*/ 
    .jumoney-container {
       display: flex;
       flex-direction: column;
@@ -59,7 +73,6 @@
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
       image-rendering: pixelated;
       position: relative;
-      top: -5em;
     }
     .info-section {
       display: flex;
@@ -132,10 +145,12 @@
 	input#name {
 	    font-size: 18pt;
 	    color: #2b2b2b;
+	    white-space: nowrap;
 	}
 	small {
 	    font-size: 9pt;
 	    color: #c1c1c1;
+	    white-space: nowrap;
 	}
 	#color-info input {
 	    border: none;
@@ -154,7 +169,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
 	<!--<script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@2.8.0/dist/dom-to-image-more.min.js"></script>-->
 <script src="https://cdn.jsdelivr.net/npm/dom-to-image-font-patch@latest/dist/dom-to-image-font-patch.min.js"></script>
-	
 
 	
 
@@ -244,10 +258,10 @@
 	        <span><input type="text" id="name" placeholder="닉네임 입력하기" style="font-family:'MabinogiClassicR';"></span>
         </div>
         <div id="color-info" style="font-family: 'Wanted Sans Variable';">
-	        <div id="color-A" class="colors"><label>A</label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small>#808080</small><small>겉감</small></div>
-	        <div id="color-B" class="colors"><label>B</label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small>#808080</small><small>아이콘/안감</small></div>
-	        <div id="color-C" class="colors"><label>C</label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small>#808080</small><small>방직 안감</small></div>
-	        <div id="color-R" class="colors"><label></label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small>#808080</small><small>로마자</small></div>
+	        <div id="color-A" class="colors"><label>A</label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small style="font-size: 9pt;">#808080</small><small style="font-size: 9pt;">겉감</small></div>
+	        <div id="color-B" class="colors"><label>B</label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small style="font-size: 9pt;">#808080</small><small style="font-size: 9pt;">아이콘/안감</small></div>
+	        <div id="color-C" class="colors"><label>C</label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small style="font-size: 9pt;">#808080</small><small style="font-size: 9pt;">방직 안감</small></div>
+	        <div id="color-R" class="colors"><label></label><span class="color-rect"></span><input type="text" id="color-a" placeholder="128 128 128"><small style="font-size: 9pt;">#808080</small><small style="font-size: 9pt;">로마자</small></div>
         </div>
       </div>
       <div class="large-box">+</div>
