@@ -1,16 +1,1 @@
-const ApiErrorCode = {
-	"OPENAPI00001"	: 	["Internal Server Error", "서버 내부 오류"],
-	"OPENAPI00002"	:	["Forbidden","권한이 없는 경우"],
-	"OPENAPI00003"	:	["Bad Request","유효하지 않은 식별자"],
-	"OPENAPI00004"	:	["Bad Request","파라미터 누락 또는 유효하지 않음"],
-	"OPENAPI00005"	:	["Bad Request","유효하지 않은 API KEY"],
-	"OPENAPI00006"	:	["Bad Request","유효하지 않은 게임 또는 API PATH"],
-	"OPENAPI00007"	:	["Too Many Requests ","API 호출량 초과"],
-	"OPENAPI00009"	:	["Bad Request","데이터 준비 중"],
-	"OPENAPI00010"	:	["Bad Request","게임 점검 중"],
-	"OPENAPI00011"	:	["Service Unavailable","API 점검 중"]
-};
-
-function getErrorMessage(code) {
-	return ApiErrorCode[code];
-}
+const a15g=a15b;function a15b(a,b){const c=a15a();return a15b=function(d,e){d=d-0x86;let f=c[d];return f;},a15b(a,b);}(function(a,b){const f=a15b,c=a();while(!![]){try{const d=parseInt(f(0x98))/0x1*(-parseInt(f(0x97))/0x2)+parseInt(f(0x91))/0x3+-parseInt(f(0x9a))/0x4*(-parseInt(f(0x90))/0x5)+-parseInt(f(0x88))/0x6+parseInt(f(0x92))/0x7*(parseInt(f(0x89))/0x8)+parseInt(f(0x8b))/0x9+-parseInt(f(0x86))/0xa;if(d===b)break;else c['push'](c['shift']());}catch(e){c['push'](c['shift']());}}}(a15a,0xb7e4b));function a15a(){const h=['95745AOiWJQ','2802324wFYOSc','21ydHGIw','Internal\x20Server\x20Error','데이터\x20준비\x20중','유효하지\x20않은\x20게임\x20또는\x20API\x20PATH','유효하지\x20않은\x20API\x20KEY','38iFvMQi','68309rQyLZx','API\x20호출량\x20초과','292bKcDoU','17481380YBqOZT','Bad\x20Request','2504292cCeJjw','2094464tYzAGx','Too\x20Many\x20Requests\x20','9892881uHDEOW','파라미터\x20누락\x20또는\x20유효하지\x20않음','서버\x20내부\x20오류','유효하지\x20않은\x20식별자','권한이\x20없는\x20경우'];a15a=function(){return h;};return a15a();}const ApiErrorCode={'OPENAPI00001':[a15g(0x93),a15g(0x8d)],'OPENAPI00002':['Forbidden',a15g(0x8f)],'OPENAPI00003':['Bad\x20Request',a15g(0x8e)],'OPENAPI00004':['Bad\x20Request',a15g(0x8c)],'OPENAPI00005':[a15g(0x87),a15g(0x96)],'OPENAPI00006':[a15g(0x87),a15g(0x95)],'OPENAPI00007':[a15g(0x8a),a15g(0x99)],'OPENAPI00009':[a15g(0x87),a15g(0x94)],'OPENAPI00010':[a15g(0x87),'게임\x20점검\x20중'],'OPENAPI00011':['Service\x20Unavailable','API\x20점검\x20중']};function getErrorMessage(a){return ApiErrorCode[a];}
