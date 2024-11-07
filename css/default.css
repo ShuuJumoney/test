@@ -1069,4 +1069,7 @@ itemModal .set-by-server{
     z-index: -1;
   }
 }
-
+#modalItemColors .color-info p {
+    display: flex;
+    flex-direction: row;
+}
