@@ -617,6 +617,7 @@ span#loadingClose {
     width: 70px;
     min-width: 58px;
     flex-direction: column;
+    display: inline-block;
 }
 
 #itemModal .color-info .rgb{
