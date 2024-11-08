@@ -1470,9 +1470,10 @@ document.addEventListener("DOMContentLoaded", function () {
     			data = await response.json();
     			console.log("---");
     			console.log(data);
+	            console.log(response.ok);
+	            if(API_KEY && data.error) response.ok = false;
 			}
 			
-            if(API_KEY && data.error) response.ok = false;
             if (!response.ok || !data.shop) {
 				const errorName = data.error.name;
 				const errorMessage = getErrorMessage(errorName);
