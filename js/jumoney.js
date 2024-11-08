@@ -1435,7 +1435,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		
 	  		// 호출 진행 중임을 기록
 	 		inProgressCalls.add(cacheKey);
-	        
+	        console.log(url);
 			//간혹 리셋 되었는데 캐시된 데이터 사용한다는 로그가 뜨며 리스트 생성 안하는 증상 방지
 			if( dataCache[cacheKey] ) { //데이터가 없다면 다시 불러오기
 	            console.log(`캐시된 데이터 사용: ${cacheKey}`);
@@ -1467,7 +1467,7 @@ document.addEventListener("DOMContentLoaded", function () {
 				response = await fetch(url);
     			data = await response.json();
 			}
-			
+			console.log(data);
             if(API_KEY && data.error) response.ok = false;
             if (!response.ok || !data.shop) {
 				const errorName = data.error.name;
