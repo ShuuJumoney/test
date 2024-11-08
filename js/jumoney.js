@@ -614,7 +614,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	                });
 	            }
 	        }
-	        displaySets(groupedItems, all); // 결과 표시
+	        displaySets(groupedItems); // 결과 표시
 	        
 	    } catch (error) {
 			console.log(error);
@@ -766,7 +766,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	
-   	async function displaySets(groupedItems, all) {	
+   	async function displaySets(groupedItems) {	
    	 	if (isDisplaying) {
 	        console.warn("displaySets가 이미 실행 중입니다.");
 	        return;
@@ -789,7 +789,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		
 		        if (matchedItemGroup) {
 		            // 비동기적으로 createChannelInfoDiv를 호출하고 기다림
-		            const channelInfoDiv = await createChannelInfoDiv(matchedItemGroup, all);
+		            const channelInfoDiv = await createChannelInfoDiv(matchedItemGroup);
 		            item.appendChild(channelInfoDiv); // 채널 정보 추가
 		            processedColors.add(qValue);
 		        }
@@ -803,7 +803,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		        	const firstItemKey = Object.keys(itemGroup)[0]; 
 		        	const firstItemData = itemGroup[firstItemKey].item_data;
         			const qValue = getQcode(firstItemData.image_url);
-		            const newItem = await createNewItem(qValue, itemGroup, all);
+		            const newItem = await createNewItem(qValue, itemGroup);
 		            if(!newItem) {
 						forloop = false;
 						return false;
@@ -860,13 +860,10 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
    	
 	// 채널 정보 DIV 생성 함수
-	async function createChannelInfoDiv(itemGroup, all, returnObj) {
+	async function createChannelInfoDiv(itemGroup, returnObj) {
 	    const channelInfoDiv = document.createElement("div");
-	    let channelType = document.getElementById("server").value;
-	    if(all) channelType = "통합";
-	    
 	    channelInfoDiv.classList.add("channel-info");
-	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info"><label class="server-mark ${channelType}" data-set="${channelType}" data-server="통합" style="padding-bottom: 1px;"></label>채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
+	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info">채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
 	    let itemDataList = [];
 	    // 첫 번째 채널 정보 계산
     	const firstChannels = getFirstChannelPerServer(itemGroup);
@@ -1333,7 +1330,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	// 새로운 팔레트 항목 생성 함수
-	async function createNewItem(qValue, itemGroup, all) {
+	async function createNewItem(qValue, itemGroup) {
 	    const newItem = document.createElement("div");
 	    const firstKey = Object.keys(itemGroup)[0];
     	const itemData = itemGroup[firstKey]?.item_data;
@@ -1379,7 +1376,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		
 		//채널 정보 추가
 		
-	    const channelInfoDiv = await createChannelInfoDiv(itemGroup, all);	    
+	    const channelInfoDiv = await createChannelInfoDiv(itemGroup);	    
 	    newItem.appendChild(channelInfoDiv);
 	    
 	     // 'open'과 'close' 이미지를 병렬로 생성
@@ -1519,8 +1516,8 @@ document.addEventListener("DOMContentLoaded", function () {
 	function isResetNeeded() {
 	    const now = new Date();
 	    let result  = false;
-	    
-	    if(nextResetTime == null) result = false;
+	    	    
+	    if(nextResetTime == null) result = true;
 	    else if ( now >= nextResetTime ) result = true;
 	    
 	    window.defaultImageCache = new Map();
@@ -1678,7 +1675,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	    } else {
 	        console.warn("채널 정보가 없습니다.");
 	        const noChannelMessage = document.createElement("p");
-	        noChannelMessage.style.textAlign="center";
 	        noChannelMessage.textContent = "채널 정보가 없습니다.";
 	        rightLayout.append(noChannelMessage);
 	    }
@@ -2200,17 +2196,14 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	    link.download = fileName;
 	
 	    // iOS/Safari 감지 및 처리
-	    /*
 	    if (isIOS()) {
 	        alert("이미지를 길게 눌러 저장하세요.");
 	        window.open(dataUrl, "_blank");
 	    } else {
-		*/		
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);	        
-	    //}
-	    
+	        document.body.appendChild(link);
+	        link.click();
+	        document.body.removeChild(link);	        
+	    }
 	}
 	
 	// iOS 또는 Safari 감지 함수
@@ -2307,7 +2300,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 			            console.warn("색상 정보가 없습니다.");
 			        }	        
 			        // 모달에 데이터 표시
-			        showChannelingModal(data, location.innerText, all);
+			        showChannelingModal(data, location.innerText);
 			    } catch (error) {
 			        console.error("채널링 중 에러 발생:", error);
 			        initializeModal();
@@ -2395,7 +2388,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	    return groupedItems; // 모든 서버와 채널에 대한 데이터를 반환
 	}
 
-	function showChannelingModal(data, itemName, all) {
+	function showChannelingModal(data, itemName) {
 	    // 기존 내용 초기화
 	    //channelInfoDiv.innerHTML = "";
 	
@@ -2410,7 +2403,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	        const matchedItemGroup = sortedItems[Object.keys(sortedItems)[0]];
 	        
 
-	 		createChannelInfoDiv(matchedItemGroup, all, true)
+	 		createChannelInfoDiv(matchedItemGroup, true)
              .then(({ div: channelInfoDiv, data: itemDataList }) => {
 	  			channelInfoDiv.querySelector(".ico-view").remove();
 	  			channelInfoDiv.querySelector(".channel-view").style.display = "block";
