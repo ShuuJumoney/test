@@ -1417,7 +1417,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function fetchNpcData(npc, server, channel) {
     	const cacheKey = `${npc}_${server}_${channel}`; // 중복 호출을 피하기 위한 캐시키 생성 //호출 횟수 아껴야함...ㅠㅠ
         let url = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${npc}&server_name=${server}&channel=${channel}`;
-        if(SHARE_KEY) url = `https://shuuryn.com/nexon_api.php?npc=${npc}&server=${server}&channel=${channel}`;
+        if(SHARE_KEY) url = `https://shuuryn.com/nexon_api5.php?npc=${npc}&server=${server}&channel=${channel}`;
 
     	//리셋 시간되면 무조건 캐시 초기화 밑 tables 초기화
     	if(isResetNeeded()){
