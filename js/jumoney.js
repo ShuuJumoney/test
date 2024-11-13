@@ -75,6 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	let requestCount = 0; // 현재 초의 호출 횟수
 	let inProgressCalls = new Set(); // 진행 중인 호출을 저장
 	let isCheckingServers = false; // 진행 상태 플래그
+	let abortController = null; // 이전 호출을 추적하기 위한 컨트롤러 변수
 	
 	async function throttle() {
 	  const now = Date.now();
@@ -188,6 +189,15 @@ document.addEventListener("DOMContentLoaded", function () {
 			return false;
 		}
 		
+		// 이전 호출이 진행 중이면 중단
+		// 전체에서 로딩 중에 마을 이동의 경우 리스트 생성이 안 멈추던 증상 해결
+	    if (abortController) {
+	        abortController.abort();
+	    }
+	    
+	     // 새로운 호출에 사용할 컨트롤러 생성
+    	abortController = new AbortController();
+    	const signal = abortController.signal;		
 		const server_name = document.getElementById("server").value;
 		const channel = document.getElementById("ch").value;
 		const locations = getLocatioin();
@@ -206,7 +216,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		try {
 			for (const npc of locations) {
 	            if (shouldStop) break; // 중단 플래그가 설정되면 반복 중단
-				const result = {data: await fetchNpcData(npc, server_name, channel)};
+				const result = {data: await fetchNpcData(npc, server_name, channel, signal)};
 	
 		        if (result.error) {
 		            console.warn(`Error: ${result.error.name}: ${result.error.message}`);
@@ -215,9 +225,9 @@ document.addEventListener("DOMContentLoaded", function () {
 		            break;
 		        }
 		        
-		        if (result && result.data.length > 0) {
-	                // 비동기 함수 호출 (await로 작업 완료까지 기다림)	                
-	                await getJumoney(result.data, npc);
+		        if (result && result.data && result.data.length > 0) {
+	                // 비동기 함수 호출 (await로 작업 완료까지 기다림)         
+	                await getJumoney(result.data, npc, signal);
 	            } else {
 	                return false; // 조건에 맞지 않으면 false 반환
 	            }
@@ -227,6 +237,16 @@ document.addEventListener("DOMContentLoaded", function () {
 				document.querySelectorAll(".item .img-area").forEach(imgArea => {
 				    imgArea.addEventListener("dblclick", singleChanneling)
 				});				
+				
+				document.querySelectorAll(".modal-open").forEach(button => {
+					button.addEventListener("click", channelModal)
+				});
+				
+				//모바일 더블 클릭			
+				document.querySelectorAll(".item .img-area").forEach((imgArea) => {
+				  imgArea.addEventListener("touchend", handleTouchEnd, { passive: false });
+				});
+
 			}			
             
 			document.querySelectorAll('.item_nm').forEach(elem => {
@@ -237,16 +257,7 @@ document.addEventListener("DOMContentLoaded", function () {
 				elem.addEventListener('click', copyQcode);
 			});
 			
-			document.querySelectorAll(".modal-open").forEach(button => {
-				button.addEventListener("click", channelModal)
-			});
-			
-			//모바일 더블 클릭			
-			document.querySelectorAll(".item .img-area").forEach((imgArea) => {
-			  imgArea.addEventListener("touchend", handleTouchEnd, { passive: false });
-			});
-
-	        console.log('주머니 리스트 생성 완료');
+	        //console.log('주머니 리스트 생성 완료');
 		}catch (error) {
         	console.error('에러 발생:' + error);
         	return false; // 에러 발생 시 false 반환
@@ -333,12 +344,16 @@ document.addEventListener("DOMContentLoaded", function () {
 	    return result;
 	}
 	
-	async function getJumoney(data, npc) {
+	async function getJumoney(data, npc, signal) {
+		if (signal && signal.aborted) {
+	        return; // 중단 요청이 있을 경우 즉시 반환
+	    }
 		if (data.length < 1 && data.error) {
 			alert(data.error.name + "\n" + data.error.message);
 			console.warn(`No shop data for NPC: ${npc}`);
 			return false;
 		}
+	
 		const items = data;
 		
 		let table = `<div class="location-area" data-npc="${npc}" data-location="${locations[npc]}"><h2 class="area-capture">${locations[npc]}</h2><div class="container">`;
@@ -433,8 +448,8 @@ document.addEventListener("DOMContentLoaded", function () {
 		let result = '<div class="color-info">';
 		const keys = Object.keys(color);
 		for (let i = 0; i < keys.length; i++) {
-			const key = keys[i];			
-			result += `<p><span class="color_rect" style="background:${color[key].hex};"></span><label class="hex">${color[key].hex}</label><label class="rgb">${color[key].rgb}</label></p>`;
+			const key = keys[i];
+			result += `<p class="color_rect_p" data-key="${key}"><span class="color_rect" style="background:${color[key].hex};"></span><label class="hex">${color[key].hex}</label><label class="rgb">${color[key].rgb}</label></p>`;
 		}
 		result += "</div>";
 		return result;
@@ -513,8 +528,9 @@ document.addEventListener("DOMContentLoaded", function () {
 		prevButton.addEventListener('click', function () {
 			const index = selectBox.selectedIndex;
 			const options = selectBox.options;
+			
 			//전체는 마을 버튼 이동에서 못하게
-			selectBox.selectedIndex = index === 1 ? options.length - 1 : index - 1;
+			selectBox.selectedIndex = index === 0 ? options.length - 1 : index - 1;
 			selectBox.dispatchEvent(new Event('change'));
 		});
 
@@ -614,7 +630,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	                });
 	            }
 	        }
-	        displaySets(groupedItems); // 결과 표시
+	        displaySets(groupedItems, all); // 결과 표시
 	        
 	    } catch (error) {
 			console.log(error);
@@ -733,14 +749,27 @@ document.addEventListener("DOMContentLoaded", function () {
 	                if (items.has(item)) collectedItems.add(item);
 	            });
 	        });
-	
+	        
 	        const isAlreadyComplete = Object.keys(serverSetStatus).some(status => status.includes(setName));
-	
-	        if (!isAlreadyComplete && collectedItems.size === setItems.length) {
-	            if (setName === "실크셋" && collectedItems.has("튼튼한 꽃바구니")) {
-	                integratedSets.add("실크셋+");
-	            } else {
-	                integratedSets.add(setName);
+	        
+	        if (!isAlreadyComplete) {
+	             if (setName === "방직셋") {
+		            const hasOtherItems = ["튼튼한 거미줄 주머니", "튼튼한 가는 실뭉치 주머니", "튼튼한 굵은 실뭉치 주머니"]
+		                .every(item => collectedItems.has(item));
+		            const hasWool = collectedItems.has("튼튼한 양털 주머니");
+		            
+		            if (hasOtherItems && !hasWool && !serverSetStatus["유사 방직"]) {
+		                integratedSets.add("유사 방직");
+		            } else if (collectedItems.size === setItems.length) {
+		                integratedSets.add("방직셋");
+		            }
+		        }
+	            else if(collectedItems.size === setItems.length) {
+					if(setName === "실크셋" && collectedItems.has("튼튼한 꽃바구니")) {
+	                	integratedSets.add("실크셋+");
+					} else {
+		                integratedSets.add(setName);
+		            }
 	            }
 	        }
 	    });
@@ -766,7 +795,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	
-   	async function displaySets(groupedItems) {	
+   	async function displaySets(groupedItems, all) {	
    	 	if (isDisplaying) {
 	        console.warn("displaySets가 이미 실행 중입니다.");
 	        return;
@@ -789,7 +818,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		
 		        if (matchedItemGroup) {
 		            // 비동기적으로 createChannelInfoDiv를 호출하고 기다림
-		            const channelInfoDiv = await createChannelInfoDiv(matchedItemGroup);
+		            const channelInfoDiv = await createChannelInfoDiv(matchedItemGroup, all);
 		            item.appendChild(channelInfoDiv); // 채널 정보 추가
 		            processedColors.add(qValue);
 		        }
@@ -803,7 +832,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		        	const firstItemKey = Object.keys(itemGroup)[0]; 
 		        	const firstItemData = itemGroup[firstItemKey].item_data;
         			const qValue = getQcode(firstItemData.image_url);
-		            const newItem = await createNewItem(qValue, itemGroup);
+		            const newItem = await createNewItem(qValue, itemGroup, all);
 		            if(!newItem) {
 						forloop = false;
 						return false;
@@ -860,10 +889,13 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
    	
 	// 채널 정보 DIV 생성 함수
-	async function createChannelInfoDiv(itemGroup, returnObj) {
+	async function createChannelInfoDiv(itemGroup, all, returnObj) {
 	    const channelInfoDiv = document.createElement("div");
+	    let channelType = document.getElementById("server").value;
+	    if(all) channelType = "통합";
+	    
 	    channelInfoDiv.classList.add("channel-info");
-	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info">채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
+	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info"><label class="server-mark ${channelType}" data-set="${channelType}" data-server="통합" style="padding-bottom: 1px;"></label>채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
 	    let itemDataList = [];
 	    // 첫 번째 채널 정보 계산
     	const firstChannels = getFirstChannelPerServer(itemGroup);
@@ -921,7 +953,6 @@ document.addEventListener("DOMContentLoaded", function () {
 	        const matchingSets = orderedSetDefinitions.filter(set => isPartOfSet(set, itemName));
 
 	        if (matchingSets.length === 0) {
-	            //console.log(`Item '${itemName}' did not match any set.`);
 	            continue; // 세트에 해당하지 않으면 건너뜀
 	        }
 	
@@ -952,7 +983,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	        }
 	    });
 	
-	    //console.log('Generated First Channels:', JSON.stringify(firstChannelMap, null, 2)); // 디버깅용 로그
+	    //console.log('세트별 첫 채널:', JSON.stringify(firstChannelMap, null, 2)); // 디버깅용 로그
 	    return firstChannelMap;
 	}
 	
@@ -1045,7 +1076,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	    }
 	    
 	    itemInfo += `<p class="channel-info-item" data-item="${itemName}">
-	        <label class="info-jumoney-name">${itemName}<span class="color_rect hidden_rect" alt="${color.C.hex}&nbsp;&nbsp;${color.C.rgb}" style="background:${color.C.hex};"></span></label>
+	        <label class="info-jumoney-name"><span class="color_rect hidden_rect" alt="${color.C.hex}&nbsp;&nbsp;${color.C.rgb}" style="background:${color.C.hex};"></span>${itemName}</label><span class="viewColor_c" style="display:none">${color.C.hex}&nbsp;&nbsp;${color.C.rgb}</span>
 	        <span class="color-03" style="display:none" color-data="${color.A.hex}, ${color.B.hex}, ${color.C.hex}"></span>`;
 	
 	    if (returnObj) itemDataList.push({ dataItem: itemName, colorData: `${color.A.hex}, ${color.B.hex}, ${color.C.hex}` });
@@ -1062,6 +1093,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 	
 	// 클릭 이벤트 핸들러 추가 함수
+	/*
 	function addClickEventsToChannelInfo(channelInfoDiv) {
 	    channelInfoDiv.querySelectorAll(".setComplete").forEach(setElement => {
 	        setElement.addEventListener("click", (e) => handleSetClick(e, setElement));
@@ -1118,7 +1150,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	    e.target.classList.toggle("active");
 	    e.stopPropagation();
 	}
-	
+	*/
 	// 세트 가시성 토글\
 	/*
 	function toggleSetVisibility(setName, channelInfo, filterUse) {
@@ -1217,6 +1249,13 @@ document.addEventListener("DOMContentLoaded", function () {
 	    channelInfoDiv.querySelector(".toggle-all-info").addEventListener("click", (e) => {
 	        resetChannelVisibility(e.target.closest(".channel-info"), true); // 이벤트 객체를 매개변수로 전달
 	    });
+	        
+	    channelInfoDiv.querySelectorAll(".hidden_rect").forEach(elem => {
+	        elem.addEventListener("click", (e) => {
+				e.target.classList.toggle("show");
+			});
+		});
+
 	}
 	
 	// 특정 세트만 표시하는 함수
@@ -1330,7 +1369,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	
 	
 	// 새로운 팔레트 항목 생성 함수
-	async function createNewItem(qValue, itemGroup) {
+	async function createNewItem(qValue, itemGroup, all) {
 	    const newItem = document.createElement("div");
 	    const firstKey = Object.keys(itemGroup)[0];
     	const itemData = itemGroup[firstKey]?.item_data;
@@ -1376,7 +1415,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		
 		//채널 정보 추가
 		
-	    const channelInfoDiv = await createChannelInfoDiv(itemGroup);	    
+	    const channelInfoDiv = await createChannelInfoDiv(itemGroup, all);	    
 	    newItem.appendChild(channelInfoDiv);
 	    
 	     // 'open'과 'close' 이미지를 병렬로 생성
@@ -1414,31 +1453,33 @@ document.addEventListener("DOMContentLoaded", function () {
 	    return newItem;
 	}
 	
-    async function fetchNpcData(npc, server, channel) {
+    async function fetchNpcData(npc, server, channel, signal) {
     	const cacheKey = `${npc}_${server}_${channel}`; // 중복 호출을 피하기 위한 캐시키 생성 //호출 횟수 아껴야함...ㅠㅠ
         let url = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${npc}&server_name=${server}&channel=${channel}`;
-        if(SHARE_KEY) url = `https://shuuryn.com/nexon_api5.php?npc=${npc}&server=${server}&channel=${channel}`;
-		console.log(url);
+        let curCache = dataCache[cacheKey];
+        
+        if(SHARE_KEY) url = `https://shuuryn.com/nexon_api.php?npc=${npc}&server=${server}&channel=${channel}`;
     	//리셋 시간되면 무조건 캐시 초기화 밑 tables 초기화
     	if(isResetNeeded()){
 			document.getElementById("tables").innerHTML = "";
-			dataCache = {};
 			imageCache = new Map();
 		}
     	// 리셋 시간이 지나지 않았고 캐시가 존재하면 재사용
-        else if (dataCache[cacheKey] ) {
+    	
+        else if ( curCache ) {
 			// 이미 진행 중인 호출인지 확인
 			if (inProgressCalls.has(cacheKey)) {
 				console.log(`이미 진행 중인 호출: ${cacheKey}`);
+				document.getElementById("curCallState").innerText = `이미 진행 중인 호출: ${cacheKey}`;
 				return; // 중복 호출 방지
 			}
-		
+			
 	  		// 호출 진행 중임을 기록
 	 		inProgressCalls.add(cacheKey);
 	        
 			//간혹 리셋 되었는데 캐시된 데이터 사용한다는 로그가 뜨며 리스트 생성 안하는 증상 방지
-			if( dataCache[cacheKey] ) { //데이터가 없다면 다시 불러오기
-	            console.log(`캐시된 데이터 사용: ${cacheKey}`);
+			if( curCache && curCache.length > 0) { //데이터가 없다면 다시 불러오기
+	            //console.log(`캐시된 데이터 사용: ${cacheKey}`);
 	            document.getElementById("curCallState").innerText = `캐시된 데이터 사용: ${cacheKey}`;
 		            
 	            completeCnt += 1;
@@ -1446,14 +1487,18 @@ document.addEventListener("DOMContentLoaded", function () {
 	            
 	            inProgressCalls.delete(cacheKey); // 진행 중 상태 해제
 	            document.getElementById("results").innerHTML = "";
-	            return dataCache[cacheKey];
-            }
+	            return curCache;
+            }   
         }		
     	
         
-        document.getElementById("curCallState").innerText = `API 호출: ${cacheKey}`;        
         //console.log(`API 호출: ${cacheKey}`);
         try {
+			
+			if (signal && signal.aborted) {
+		        return; // 중단 요청이 있을 경우 즉시 반환
+		    }
+	
 			// API 키가 "test"로 시작하면 호출 제한 적용
 		    if (API_KEY.startsWith("test") && !SHARE_KEY) {
 		      await throttle();
@@ -1461,43 +1506,40 @@ document.addEventListener("DOMContentLoaded", function () {
 		    
 		    let response, data;
 			if( !SHARE_KEY ) { 
-            	response = await fetch(url, { headers: { "x-nxopen-api-key": API_KEY } });
+            	response = await fetch(url, { headers: { "x-nxopen-api-key": API_KEY }} );
             	data = await response.json();
-            	console.log("###");
-            	console.log(data);
             }else{
-				response = await fetch(url);
+				response = await fetch(url,);
     			data = await response.json();
-    			console.log("---");
-    			console.log(data);
-	            console.log(response.ok);
-	            if(API_KEY && data.error) response.ok = false;
 			}
 			
+            if(API_KEY && data.error) response.ok = false;
             if (!response.ok || !data.shop) {
 				const errorName = data.error.name;
 				const errorMessage = getErrorMessage(errorName);
+				
 				alert(errorName+"\n"+errorMessage.join("\n"));
+				
             	console.error(errorName + ": " + data.error.message);
+            	
             	document.getElementById("loading").style.display = "none";
             	document.getElementById("results").innerHTML = errorName+"<br/>"+errorMessage[0] + "<br/>" + errorMessage[1];
             	return data;
-            }else{
+            }else{	
+	        	document.getElementById("curCallState").innerText = `API 호출: ${cacheKey}`;     
 				document.getElementById("results").innerHTML = "";			
+	        	// 주머니 데이터 추출 및 캐시에 저장
+	            const items = data.shop.filter(shop => shop.tab_name === "주머니").flatMap(shop => shop.item);
+	            dataCache[cacheKey] = items;  // 캐시에 저장	            
+	            completeCnt += 1;
+	            setCompleteCnt();
             
 	            //리셋 시간 변경 됐을 경우만 저장
 	            if (!nextResetTime || new Date(data.date_shop_next_update) > nextResetTime ) {
 	                nextResetTime = new Date(data.date_shop_next_update);
 	                setTime(nextResetTime);
 	                console.log(`다음 리셋 시간 갱신: ${nextResetTime}`);
-	            }
-	            
-	        	// 주머니 데이터 추출 및 캐시에 저장
-	            const items = data.shop.filter(shop => shop.tab_name === "주머니").flatMap(shop => shop.item);
-	            dataCache[cacheKey] = items;  // 캐시에 저장
-	            
-	            completeCnt += 1;
-	            setCompleteCnt();
+	            }	            
 	            
 	            return items;
             }
@@ -1510,6 +1552,7 @@ document.addEventListener("DOMContentLoaded", function () {
 	        // 실패 시 상태 초기화
 	        inProgressCalls.delete(cacheKey); 
 	        dataCache[cacheKey] = null; // 캐시 무효화
+	        if(error.name == "OPENAPI00009") dataCache = {};
 	        hideLoadingOverlay(); // 로딩 오버레이 숨기기
 	        alert('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
         }finally {
@@ -1521,10 +1564,12 @@ document.addEventListener("DOMContentLoaded", function () {
 	function isResetNeeded() {
 	    const now = new Date();
 	    let result  = false;
-	    	    
-	    if(nextResetTime == null) result = true;
-	    else if ( now >= nextResetTime ) result = true;
 	    
+	    if(nextResetTime == null) result = false;
+	    else if ( now >= nextResetTime ) {		
+			dataCache = {};
+			result = true;
+		}
 	    window.defaultImageCache = new Map();
 	  		
 	    return result;
@@ -1615,6 +1660,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // 색상 정보 추가
         const colorInfo = item.querySelector(".color-info");
+        //const color_c = colorInfo.querySelector(".color_rect_p[data-key=C]").querySelector(".hex").innerText.toUpperCase();
+        //let newColor_c;
+        
         if (colorInfo) {
             modalItemColors.innerHTML = colorInfo.outerHTML;
         } else {
@@ -1636,10 +1684,17 @@ document.addEventListener("DOMContentLoaded", function () {
 	                : null;
 	            
 	            const colorInfo = {};
-	            colorInfo[dataItem] = colorData;	            
-	         
+	            colorInfo[dataItem] = colorData;
+	            /*
+	            if( !newColor_c ){
+	            	const new_color_c = colorData.trim().split(",")[2].toUpperCase();
+	            	if(color_c != new_color_c) newColor_c = new_color_c;
+	            }
+	         	*/
 				return {dataItem, colorData}
 	        });
+	        
+	        //console.log(newColor_c);
 	        
 	        // 채널 정보 복제 및 추가
 	        const channelInfoClone = channelInfo.cloneNode(true);
@@ -1649,37 +1704,10 @@ document.addEventListener("DOMContentLoaded", function () {
 	        rightLayout.append(channelInfoClone);
 	        addClickEventsToChannelInfo(channelInfoClone);
 	        
-			// 모든 .color_rect 요소에 툴팁 기능 추가
-			document.querySelectorAll('#itemModal .info-jumoney-name .color_rect').forEach((element) => {
-			    const tooltipText = element.getAttribute('alt'); // alt 값 가져오기
-			    const tooltip = document.createElement('div'); // 툴팁 요소 생성
-			    tooltip.className = 'tooltip';
-			    tooltip.textContent = tooltipText;
-			    document.body.appendChild(tooltip);
-			
-			    // 마우스 오버 시 툴팁 표시
-			    element.addEventListener('mouseenter', (event) => {
-			        tooltip.style.left = `${event.pageX}px`;
-			        tooltip.style.top = `${event.pageY - 30}px`;
-			        tooltip.style.opacity = 1;
-			    });
-			
-			    // 마우스 이동 시 툴팁 위치 업데이트
-			    element.addEventListener('mousemove', (event) => {
-			        tooltip.style.left = `${event.pageX}px`;
-			        tooltip.style.top = `${event.pageY - 30}px`;
-			    });
-			
-			    // 마우스 아웃 시 툴팁 숨기기
-			    element.addEventListener('mouseleave', () => {
-			        tooltip.style.opacity = 0;
-			    });
-			});
-			
-	        
 	    } else {
 	        console.warn("채널 정보가 없습니다.");
 	        const noChannelMessage = document.createElement("p");
+	        noChannelMessage.style.textAlign="center";
 	        noChannelMessage.textContent = "채널 정보가 없습니다.";
 	        rightLayout.append(noChannelMessage);
 	    }
@@ -2140,45 +2168,18 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	
 	// 클립보드에 이미지 복사
 	document.getElementById("captureBtn").addEventListener("click", async () => {
-		/*
-		 try {
-	        //const blob = await captureImage2();
-	        const dataUrl =  await captureImage2();
-	        const response = await fetch(dataUrl);
-        	const blob = await response.blob();
-	
-	        if (blob) {
-	            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-	            iziToast.success({
-	                title: '클립보드에 이미지가 복사되었습니다',
-	                message: '',
-	                drag: true,
-	                position: 'topCenter',
-	                targetFirst: true,
-	                timeout: 1000,
-	                progressBar: true,
-	                progressBarColor: '',
-	                progressBarEasing: 'linear',
-	                close: true,
-	            });
-	        } else {
-	            throw new Error("캔버스에서 Blob을 생성할 수 없습니다.");
-	        }
-	    } catch (err) {
-	        console.error("클립보드 복사 실패:", err);
-	        alert("복사에 실패했습니다.");
-	    }
-	   */
-	   
+		   
 	    try {
 	        const dataUrl = await captureImage();
 	        const blob = await (await fetch(dataUrl)).blob();
-	
+			//displayImageInModal(dataUrl);
 	        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
         	iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
 	    } catch (err) {
 	        console.error("클립보드 복사 실패:", err);
-	        alert("복사에 실패했습니다.");
+			iziToast.error({title: '복사에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1500,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+			displayImageInModal(dataUrl);
+	        //alert("복사에 실패했습니다.");	        
 	    }
 	});
 	
@@ -2190,7 +2191,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	        saveImage(dataUrl, fileName);	        
 	    } catch (err) {
 	        console.error("이미지 저장 실패:", err);
-	        alert("저장에 실패했습니다.");
+	        iziToast.error({title: '저장에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
 	    }
 	});
 	
@@ -2201,14 +2202,17 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	    link.download = fileName;
 	
 	    // iOS/Safari 감지 및 처리
+	    /*
 	    if (isIOS()) {
 	        alert("이미지를 길게 눌러 저장하세요.");
 	        window.open(dataUrl, "_blank");
 	    } else {
-	        document.body.appendChild(link);
-	        link.click();
-	        document.body.removeChild(link);	        
-	    }
+		*/		
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);	        
+	    //}
+	    
 	}
 	
 	// iOS 또는 Safari 감지 함수
@@ -2216,6 +2220,37 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	    return /iP(hone|ad|od)/i.test(navigator.userAgent) ||
 	           (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 	}
+	
+	// 모달에 이미지 표시 함수
+	function displayImageInModal(dataUrl) {
+	    const imgElement = document.getElementById("previewModalImage"); // 모달 내 이미지 요소 ID를 사용
+	    imgElement.src = dataUrl;
+	    
+	    const modal = document.getElementById("previewModal"); // previewModal ID를 사용해 모달 요소 가져오기
+	    modal.style.display = "flex"; // 모달을 열기 위해 display 스타일 변경
+	
+	    // 모달 외부 클릭 시 닫기
+		modal.addEventListener("click", (event) => {
+			if (event.target === modal) {
+				closeModal();
+			}
+		});
+		
+	    
+	    iziToast.error({title: '실패', message: '새로 열린 모달창의 이미지를 우클릭 또는 길게 눌러 복사/저장할 수 있습니다.',drag: true,position: 'topCenter', targetFirst: true,timeout: 10000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+	    
+	}
+	
+	// 모달 닫기 함수
+	function closeModal() {
+	    const modal = document.getElementById("previewModal");
+	    const imgElement = document.getElementById("previewModalImage"); // 모달 내 이미지 요소 ID를 사용
+	    imgElement.removeAttribute("src");
+	    modal.style.display = "none";
+	}
+	
+	// 모달 내 닫기 버튼에 이벤트 추가
+	document.getElementById("closePreviewModal").addEventListener("click", closeModal); // 모달 닫기 버튼의 ID가 closeModalBtn이라고 가정
 	
 	// 날짜 및 시간 형식 포맷 함수
 	function getCurrentFormattedTime() {
@@ -2305,7 +2340,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 			            console.warn("색상 정보가 없습니다.");
 			        }	        
 			        // 모달에 데이터 표시
-			        showChannelingModal(data, location.innerText);
+			        showChannelingModal(data, location.innerText, all);
 			    } catch (error) {
 			        console.error("채널링 중 에러 발생:", error);
 			        initializeModal();
@@ -2393,7 +2428,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	    return groupedItems; // 모든 서버와 채널에 대한 데이터를 반환
 	}
 
-	function showChannelingModal(data, itemName) {
+	function showChannelingModal(data, itemName, all) {
 	    // 기존 내용 초기화
 	    //channelInfoDiv.innerHTML = "";
 	
@@ -2408,7 +2443,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	        const matchedItemGroup = sortedItems[Object.keys(sortedItems)[0]];
 	        
 
-	 		createChannelInfoDiv(matchedItemGroup, true)
+	 		createChannelInfoDiv(matchedItemGroup, all, true)
              .then(({ div: channelInfoDiv, data: itemDataList }) => {
 	  			channelInfoDiv.querySelector(".ico-view").remove();
 	  			channelInfoDiv.querySelector(".channel-view").style.display = "block";
