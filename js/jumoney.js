@@ -2175,6 +2175,7 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 			//displayImageInModal(dataUrl);
 	        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
         	iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+			console.logg();
 	    } catch (err) {
 	        console.error("클립보드 복사 실패:", err);
 			iziToast.error({title: '복사에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1500,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
