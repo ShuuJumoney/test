@@ -2174,11 +2174,11 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	        const blob = await (await fetch(dataUrl)).blob();
 			//displayImageInModal(dataUrl);
 	        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        	iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
-			console.logg();
+        	//iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+			console.loggg();
 	    } catch (err) {
 	        console.error("클립보드 복사 실패:", err);
-			iziToast.error({title: '복사에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1500,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+			//iziToast.error({title: '복사에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1500,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
 			displayImageInModal(dataUrl);
 	        //alert("복사에 실패했습니다.");	        
 	    }
@@ -2215,7 +2215,9 @@ document.getElementById("closePreviewModal").addEventListener("click", () => {
 	    //}
 	    
 	}
-	
+	function isIPhone() {
+		return /iPhone/i.test(navigator.userAgent);
+	}
 	// iOS 또는 Safari 감지 함수
 	function isIOS() {
 	    return /iP(hone|ad|od)/i.test(navigator.userAgent) ||
