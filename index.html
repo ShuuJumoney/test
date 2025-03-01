@@ -8,10 +8,10 @@
 <script type="text/javascript" src="./js/apiCode.js"></script>
 <script src="./js/erinTime.min.js?v2"></script>
 <script type="text/javascript" src="./js/decodeGivenColorQuery.min.js"></script>
-<script type="text/javascript" src="./js/a_001.min.js?241204"></script>
+<script type="text/javascript" src="./js/a_001.min.js?241209"></script>
 <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@2.8.0/dist/dom-to-image-more.min.js"></script>
 <script	src="https://cdn.jsdelivr.net/npm/dom-to-image-font-patch@latest/dist/dom-to-image-font-patch.min.js"></script>
-<script type="text/javascript" src="./js/jumoney.min.js?v241204"></script>
+<script type="text/javascript" src="./js/jumoney.min.js?v241209-03"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.4/dist/sweetalert2.all.min.js"></script>
 <link rel="stylesheet" href="./js/izitoast/iziToast.css"></link>
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script> -->
@@ -19,7 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script type="text/javascript"  src="./js/izitoast/iziToast.js"></script>
 <link rel="stylesheet" href="./css/font.css?241105">
-<link rel="stylesheet" href="./css/default.css?v241204-3">
+<link rel="stylesheet" href="./css/default.css?v241209-03">
 <link rel="stylesheet" href="./css/icon/iconStyle.css?v241101">
 <link rel="stylesheet" href="./js/sweetalert2/sweetalert2.css"></link>
 <script>
@@ -58,15 +58,7 @@ display:none;
     bottom: 0px;
     display:none;
 }
-.flex-col{
-    position: relative;
-    width: 100%;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-wrap: nowrap;
-}
+
 </style>
 </head>
 <body>
@@ -105,6 +97,8 @@ display:none;
 					<option value="얼리">오아시스</option>
 					<option value="모락">칼리다</option>
 					<option value="데위">페라(자르딘)</option>
+					<option value="델">델</option>
+					<option value="델렌">델렌</option>
 				</select>
 				
 				<select id="server">
@@ -148,13 +142,13 @@ display:none;
 		    <button id="betaJumoney" onclick="window.open('jumoney-beta.html')" style="font-size: 8pt;padding: 4px 5px;">주머니<br>Beta</button>				
 		</div>
 	</div>	
-	<div id="filterForm">
+	<div id="filterForm" info="hide">
 		<div class="flex-col">
 			<div id="filter-top">
 				<div class="filter-option space-between">
 					<div class="leftSpace flex-simple-row">
-						<button id="addSimpleFilter" class="sub-btn">필터 추가</button>
-						<button id="addDetailFilter" class="sub-btn">범위 필터 추가</button>
+						<button id="addSimpleFilter" class="sub-btn filterHide">필터 추가</button>
+						<button id="addDetailFilter" class="sub-btn filterHide">범위 필터 추가</button>
 						<div class="flex-simple-row gap5" >
 							<label class="label" for="filterAlign">필터 정렬</label>
 							<div class="wrapper wid65">							
@@ -178,17 +172,23 @@ display:none;
 							</div>
 						</div>
 					</div>
-					<div class="rightSpace flex-simple-row">						
-						<button id="filterSimplify">필터 요약</button>
+					<div class="rightSpace flex-simple-row">
+						<button id="filterSimplify" class="filterHide">필터 요약</button>
+						<button id="filterHide" info="hide">필터 보기</button>						
 						<button id="cancleColorFilter">필터링 취소</button>	
 			    		<button id="applyColorFilter">필터링</button>			    		
 			    	</div>
+				</div>
+				<div class="default-text flex-col left filterHide">
+					<label>AND/OR은 순차 방식으로 적용됩니다. <small>(수학적 AND 우선 방식 X)</small></label>
+					<label>세트: 세트별로 묶여 세트 안의 순서로 적용됩니다. 각 세트에 만족하는 경우 주머니가 표시됩니다. <small>(A조건 불만족, B조건 만족: 표시)</small></label>
+					<label>순서: 각 세트 내의 순서. 해당 순서대로 순착 방식이 적용됩니다.</label>
 				</div>
 				<div class="filter-option">
 					
 				</div>
 			</div>
-			<div id="filters" style="width: 100%;border-bottom: 1px solid #ddd;margin-bottom: 30px;">
+			<div id="filters" class="filterHide" style="width: 100%;">
 			    
 				<div id="filter-color" class="hide-show-srch filter simple">
 					<div class="colorFilter flex-simple-row">	
@@ -217,7 +217,7 @@ display:none;
 					    </div>
 						<div class="filter-input show-simple">
 							<input type="text" class="filter-set-index input-text filter-input-padding input-number" value="1">
-							<lable class="label-title center">순서</lable>
+							<lable class="label-title center" required>순서</lable>
 						</div>
 						<div class="filter-input name">
 							<input type="text" class="filter-name input-text input-max-4">
@@ -226,10 +226,10 @@ display:none;
 						<select class="filter-type show-simple">
 							<option value="">전체</option>
 							<option value="A">A 겉감</option>
-							<option value="B">B 안감/아이콘</option>
-							<option value="C">C 안감/로마자</option>
-							<option value="C+">C 안감</option>
-							<option value="R">C 로마자</option>
+							<option value="B">B 안감+아이콘</option>
+							<option value="C">C 안감+로마자</option>
+							<option value="C+">C 안감만</option>
+							<option value="R">C 로마자만</option>
 						</select>
 						<div class="filter-color-info">
 					    	<span class="filter-color-rect"></span>
@@ -330,25 +330,42 @@ display:none;
 				<li>얼레벌레 공지입니다. 보기 좋게 만드는 건 기능구현 후에..</li>
 			</ul>
 			<br/>
-			<ul style="background: #fff8c7;font-size: 11pt;">
-				<li>색상코드 계산법이 <a href="https://x.com/jumeonidik3038" target="_blank">주머니디코@jumeonidik303</a>이 제공해주신 파일 수정본으로 대체됩니다.</li>
-				<li>이미지 제작에 도움 및 파일 제공 해주신 <a href="https://x.com/darkchocored" target="_blank">주머니보고다님@darkchocored</a>님 감사합니다.</li>
-				<li>10월 26일 이후 업데이트는 <a href="https://x.com/Shuu__deal/status/1850117716096725476" target="_blank">여기</a>에서 확인 가능합니다.</li>		
-			</ul>			
+			
+			<ul style=" background: #fcf3f3;">
+				<li><label class="new_nt">new</label>2024-12-09 필터링 기능 업데이트</li>
+				<li>&nbsp;</li>
+				<li>- '옵션 접기/펼치기' 버튼을 통해 필터링 옵션을 설정할 수 있습니다.</li>
+				<li>- 자세한 사용법은 추후 공지 예정입니다.</li>
+				<li>&nbsp;</li>
+				<li>- 오차 0 입력 안되는 버그 수정.</li>
+				<li>- AND/OR 새로고침 시 유지 안되는 버그 수정.</li>
+			</ul>
+			<br/>			
+			
+			<ul>
+				<li>필터링 기능 안정화 이후 알림 기능 추가 예정.</li>
+			</ul>
 			
 			<ul>
 				<li>채널링, 특히 전 서버 채널링은 어쩔 수 없이 api 호출 횟수가 많습니다.</li>
 				<li>서비스 api키 발급에서 사이트 검증을 안하는 것 같으니 참고하세요!</li>
-			</ul>		
-	
-			<br/>
-			
-			<ul style=" background: #fcf3f3;">
-				<li><label class="new_nt">new</label>2024-12-04  test</li>
-				<li>&nbsp;</li>
-				<li>필터리 기능이 업데이트 되었습니다.</li>
-				<li>상단의 옵션 펼치기/접기 버튼을 통해 필터링 영역이 확인 가능합니다.</li>
 			</ul>
+			
+			<ul style="background: #fff8c7;font-size: 11pt;">
+				<li>색상코드 계산법이 <a href="https://x.com/jumeonidik3038" target="_blank">주머니디코@jumeonidik303</a>이 제공해주신 파일 수정본으로 대체됩니다.</li>
+				<li>이미지 제작에 도움 및 파일 제공 해주신 <a href="https://x.com/darkchocored" target="_blank">주머니보고다님@darkchocored</a>님 감사합니다.</li>
+				<li>10월 26일 이후 업데이트는 <a href="https://x.com/Shuu__deal/status/1850117716096725476" target="_blank">여기</a>에서 확인 가능합니다.</li>						
+			</ul>
+			
+			<ul>
+				<li>주머니Beta 기능</li>
+				<li>- 주머니 이미지 제작이 가능하며, 배포 이미지 제작이 가능합니다.</li>
+				<li>- 아이디 입력을 원치 않을 경우 스페이스(공백) 한번을 입력하세요.</li>
+				<li>- 해당 기능은 이미지 툴을 다루기 어려운 분들을 위한 기능입니다.</li>
+				<li>- 수배지 이미지 생성 후 마음대로 수정하셔도 됩니다.</li>
+				<li>- 이미지 툴 다루는데 어려움이 없으신 분들은 <a href="https://x.com/Elatha_Marry_Me/status/1853811385647730803" target="_blank">WF 쭈냠냠이</a>님 틀을 사용해보세요!</li>
+			</ul>
+			
 			
 		</div>
 		<div id="tables" style="display:none;"></div>
@@ -429,7 +446,7 @@ display:none;
 	
 	<footer>
 		<p>Data based on NEXON Open API</p>
-		<p style="font-size: 13px;">V241204-test</p>
+		<p style="font-size: 13px;">V250301-test</p>
 		<span>울프 주머니@Shuu__deal</span>
 	</footer>
 </body>

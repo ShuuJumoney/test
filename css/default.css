@@ -61,6 +61,7 @@ footer span{
     margin-bottom: 4px;
 	position: relative;
    	padding-top: 10px;
+   	max-width:300px;
 }
 .color_rect {
     display: inline-block;
@@ -556,6 +557,11 @@ span#loadingClose {
     color: #999;
     cursor: pointer;
 }
+.item .icon.icon-left{
+    left: 0.3em;
+    right: unset;
+    display:none;
+}
 .item .icon:hover {
     background: #f0f0f0;
 }
@@ -751,6 +757,9 @@ span#loadingClose {
     color: #555;
     padding-bottom: 0.3em;
     white-space: nowrap;
+    font-family: 'Wanted Sans Variable';
+    font-size: 12px;
+    line-height: 7px;
 }
 
 #itemModal .loading-spinner, .loading-spinner {
@@ -1214,7 +1223,12 @@ itemModal .set-by-server{
     border-radius: 3px;
     font-size: 11pt;
 }
-
+.filter-set-index:invalid ~ .label-title {
+	color:#cc4d4d;
+}
+.filter input[type=text].filter-set-index:invalid {
+	border: 1px solid #cc4d4d;
+}
 .label-title{
     color: #8d8d8d;
     position: absolute;
@@ -1244,7 +1258,7 @@ itemModal .set-by-server{
     color: #7d7d7d;
 }
 .filter-input .input-text:focus {
-    border: 1px solid #4d79bd;
+    border: 1px solid #4d79bd !important;
     box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 3px inset, rgba(82, 168, 236, 0.3) 0px 0px 3px;
 }
 
@@ -1664,4 +1678,50 @@ button#topBtn {
     position: relative;
     width: 35px;
     height: 35px;
+}
+.default-text{
+    color: #333;
+    font-family: 'Wanted Sans Variable';
+    font-size: 14px;
+    line-height: 14px;
+}
+
+/* select 기본 스타일 */
+/* 툴팁 스타일 */
+.jsTooltip{
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 1000;
+    display: none; /* 기본적으로 숨김 */
+    pointer-events: none; /* 툴팁 클릭 방지 */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.flex-col{
+    position: relative;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+.flex-col:last-child {
+    border-bottom: 1px solid rgb(221, 221, 221);
+}
+.flex-col.left{
+	align-items: flex-start;
+	gap:2px;
+}
+#modal-haveTime .timeTitle{
+	background: #bbdcff;	
+}
+
+#filterForm[info=hide] .filterHide{
+	display:none;
 }
