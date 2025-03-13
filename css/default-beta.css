@@ -103,7 +103,7 @@ div#jumoney-info {
 .grid-container {
 	display: grid;
 	grid-template-columns: repeat(5, 96px);
-    column-gap: 10px;
+	grid-gap: 10px;
 	justify-content: center;
 	color: #919191;
 }

@@ -1,1 +1,17 @@
-const a15g=a15b;function a15a(){const h=['유효하지\x20않은\x20API\x20KEY','530NFhqns','60664TPSaZf','273471AnFVtc','645694OYkNDi','3hLbseR','게임\x20점검\x20중','API\x20호출량\x20초과','Internal\x20Server\x20Error','API\x20점검\x20중','데이터\x20준비\x20중','파라미터\x20누락\x20또는\x20유효하지\x20않음','3930380JNLpZo','12QVzmzT','서버\x20내부\x20오류','유효하지\x20않은\x20게임\x20또는\x20API\x20PATH','Too\x20Many\x20Requests\x20','Bad\x20Request','2184676ZADtiy','유효하지\x20않은\x20식별자','873614fOlvDr','549qEvlUx','2694090PRydor'];a15a=function(){return h;};return a15a();}(function(a,b){const f=a15b,c=a();while(!![]){try{const d=parseInt(f(0x132))/0x1+parseInt(f(0x140))/0x2*(-parseInt(f(0x133))/0x3)+-parseInt(f(0x13a))/0x4+parseInt(f(0x144))/0x5+-parseInt(f(0x13b))/0x6*(parseInt(f(0x142))/0x7)+parseInt(f(0x147))/0x8*(parseInt(f(0x143))/0x9)+-parseInt(f(0x146))/0xa*(-parseInt(f(0x131))/0xb);if(d===b)break;else c['push'](c['shift']());}catch(e){c['push'](c['shift']());}}}(a15a,0x9c4ab));const ApiErrorCode={'OPENAPI00001':[a15g(0x136),a15g(0x13c)],'OPENAPI00002':['Forbidden','권한이\x20없는\x20경우'],'OPENAPI00003':['Bad\x20Request',a15g(0x141)],'OPENAPI00004':[a15g(0x13f),a15g(0x139)],'OPENAPI00005':[a15g(0x13f),a15g(0x145)],'OPENAPI00006':[a15g(0x13f),a15g(0x13d)],'OPENAPI00007':[a15g(0x13e),a15g(0x135)],'OPENAPI00009':['Bad\x20Request',a15g(0x138)],'OPENAPI00010':[a15g(0x13f),a15g(0x134)],'OPENAPI00011':['Service\x20Unavailable',a15g(0x137)]};function a15b(a,b){const c=a15a();return a15b=function(d,e){d=d-0x131;let f=c[d];return f;},a15b(a,b);}function getErrorMessage(a){return ApiErrorCode[a];}
+const ApiErrorCode = {
+	"OPENAPI00001"	: 	["Internal Server Error", "서버 내부 오류"],
+	"OPENAPI00002"	:	["Forbidden","권한이 없는 경우"],
+	"OPENAPI00003"	:	["Bad Request","유효하지 않은 식별자"],
+	"OPENAPI00004"	:	["Bad Request","파라미터 누락 또는 유효하지 않음"],
+	"OPENAPI00005"	:	["Bad Request","유효하지 않은 API KEY"],
+	"OPENAPI00006"	:	["Bad Request","유효하지 않은 게임 또는 API PATH"],
+	"OPENAPI00007"	:	["Too Many Requests ","API 호출량 초과"],
+	"OPENAPI00009"	:	["Bad Request","데이터 준비 중"],
+	"OPENAPI00010"	:	["Bad Request","게임 점검 중"],
+	"OPENAPI00011"	:	["Service Unavailable","API 점검 중"],
+	"Hey Nexon..."	:	["Nexon didn't work🤔", "받은 데이터에 상품 리스트가 없습니다"]
+};
+
+function getErrorMessage(code) {
+	return ApiErrorCode[code];
+}
