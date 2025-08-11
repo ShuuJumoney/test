@@ -10,7 +10,7 @@ console.log(opts);
   box.innerHTML = '<div class="board-loading">공지 불러오는 중…</div>';
   
 
-  const dirURL = (opts && opts.dir) || '../notice/';
+  const dirURL = (opts && opts.dir) || './notice/';
   const allowFallbackList = (opts && opts.allowFallbackList !== undefined) ? !!opts.allowFallbackList : true;
 
   let names = [];
@@ -146,4 +146,5 @@ function injectNoticeBoardStyle() {
   s.textContent = css;
   document.head.appendChild(s);
 }
+
 
