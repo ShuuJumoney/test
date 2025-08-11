@@ -10,7 +10,7 @@ console.log(opts);
   box.innerHTML = '<div class="board-loading">공지 불러오는 중…</div>';
   
 
-  const dirURL = (opts && opts.dir) || './notice/';
+  const dirURL = (opts && opts.dir) || '../notice/';
   const allowFallbackList = (opts && opts.allowFallbackList !== undefined) ? !!opts.allowFallbackList : true;
 
   let names = [];
@@ -28,7 +28,7 @@ console.log(opts);
       if (res.ok) names = await res.json();
     } catch {console.log("2");}
   }
-
+console.log(names);
   const items = names.map(name => {
     const base = name.split('/').pop();
     const dec = decodeURIComponent(base || '');
@@ -146,3 +146,4 @@ function injectNoticeBoardStyle() {
   s.textContent = css;
   document.head.appendChild(s);
 }
+
