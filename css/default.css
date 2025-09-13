@@ -40,7 +40,7 @@ footer span{
 }
 .img-area {
     image-rendering: pixelated;
-    height: 94px;
+    height: 96px;
     text-align: center;
     cursor: url(../image/mouse_click.png) 13.5 0, auto;
     display: inline-block;
@@ -49,8 +49,7 @@ footer span{
 }
 .api-img {
     image-rendering: pixelated;
-	height: 94px;
-    height: 94px;
+	height: 96px;
 }
 .item, .channel-info.new-colorSet {
     width: calc(100% - 6px);
@@ -60,7 +59,7 @@ footer span{
     text-align: center;
     margin-bottom: 4px;
 	position: relative;
-   	padding-top: 10px;
+   	padding-top: 7px;
    	max-width:300px;
 }
 .color_rect {
@@ -347,7 +346,7 @@ span.info-channel.all-server{
 }
 .channel-info h4 {
     margin-bottom: 3px;
-    margin-top: 8px;
+    margin-top: 5px;
     text-align: center;
     font-size: 11pt;
     cursor: pointer;
@@ -368,7 +367,7 @@ span.info-channel.all-server{
 	background-size: 15px 13px;
 	background-repeat: no-repeat;
 	vertical-align: middle;
-	opacity: 0.6;
+	opacity: 0.7;
 	margin-right: 4px;
 }
 .server-mark.울프{
@@ -449,12 +448,12 @@ span.setComplete {
 }
 .set-info .server-mark {
     margin: 0;
-    opacity: 0.5;
+    opacity: 0.7;
 }
-.set-info .server-mark:not(.í†µí•©) {
+.set-info .server-mark:not(.통합) {
 	cursor: pointer;
 }
-#tables .set-info .server-mark:not(.í†µí•©):hover, .set-info .server-mark.active {
+#tables .set-info .server-mark:not(.통합):hover, .set-info .server-mark.active {
     opacity: 1;
 }
 
@@ -515,10 +514,9 @@ button#loadingClose {
 label.new_nt {
     color: red;
     font-size: 10px;
-    margin-right: 5px;
     position: absolute;
-    left: 15px;
-    /* top: 16px; */
+    left: 22px;
+    line-height: 21px;
 }
 #loading ul {
     width: 70%;
@@ -528,6 +526,8 @@ label.new_nt {
     transform: translate(-50%);
     list-style: none;
     font-size: 0.9em;
+    padding: 5px 10px 7px 40px;
+    border-radius: 5px;
 }
 span#loadingClose:hover {
     color: #ffea5d;
@@ -620,11 +620,11 @@ span#loadingClose {
 #itemModal .left-layout {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 3px; /*7 -> 3*/
     width: 50%;
     align-items: center;
     position: relative;
-    /* top: -29px; */
+    /* top: -35px; */
 }
 
 #itemModal .left-layout h3 {
@@ -634,7 +634,7 @@ span#loadingClose {
 	font-size: 17pt;
 	position: relative;
 	top: -5px;
-	margin-top: 10px;
+	margin-top: 3px;
 } 
 
 #itemModal .image-container {
@@ -754,12 +754,13 @@ span#loadingClose {
     bottom: -16px;
     right: 0px;
     font-size: 10px;
-    color: #111;
+    color: #616161;
     padding-bottom: 0.3em;
     white-space: nowrap;
     font-family: 'Wanted Sans Variable';
     font-size: 12px;
     line-height: 7px;
+    font-weight: bold;
 }
 
 #itemModal .loading-spinner, .loading-spinner {
@@ -807,7 +808,8 @@ label.timeTitle {
     background: #ddd;
     border-radius: 20px;
     padding: 2px 5px;
-    white-space: nowrap;
+    white-space: nowrap;    
+    line-height: 15px;
 }
 
 .set-time{
@@ -815,7 +817,7 @@ label.timeTitle {
     line-height: 19px;
     /* padding: 0px 4px 4px; */
     vertical-align: super;
-    padding: 0px 7px 0px 5px;
+    padding: 0px 7px 0px 4px;
 }
 
 .info-jumoney-name .color_rect {
@@ -1724,4 +1726,18 @@ button#topBtn {
 
 #filterForm[info=hide] .filterHide{
 	display:none;
+}
+#loading hr{
+    width: calc(70% + 50px);
+    border: 0px;
+    border-top: 1px solid #ddd;
+
+}
+
+#modal-resetTime .timeTitle {
+	background: #ffc8c8;
+}
+#modal-resetTime .set-time {
+	color: #ed6969;
+    font-weight: bold;
 }
