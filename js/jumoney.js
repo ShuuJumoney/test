@@ -1,0 +1,4106 @@
+document.addEventListener("DOMContentLoaded", function () {
+	
+	function Mobile(){
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);}
+	
+    if (Mobile()){// 모바일일 경우
+        
+    } else {// 모바일 외
+        
+    }
+	
+	// URL 변경 후 버전
+	getErinTime(document.getElementById("erinTime"));
+	const locations = {
+		"상인 네루": "티르코네일", "상인 누누": "던바튼", "상인 메루": "이멘마하", "상인 라누": "반호르", "상인 베루": "탈틴", "상인 에루": "타라",
+		"상인 아루": "카브", "상인 피루": "벨바스트", "상인 세누": "스카하", "테일로": "켈라", "켄": "필리아", "리나": "코르", "카디": "발레스", 
+		"귀넥": "카루", "얼리": "오아시스", "모락": "칼리다", "데위": "페라(자르딘)", "델": "이멘마하 광장 - 델", "델렌": "이멘마하 광장 - 델렌"
+	};
+
+	const setDefinitions = {
+		    작물셋: ["튼튼한 달걀 주머니", "튼튼한 감자 주머니", "튼튼한 옥수수 주머니", "튼튼한 밀 주머니", "튼튼한 보리 주머니"],
+		    방직셋: ["튼튼한 양털 주머니", "튼튼한 거미줄 주머니", "튼튼한 가는 실뭉치 주머니", "튼튼한 굵은 실뭉치 주머니"],
+		    가죽셋: ["튼튼한 저가형 가죽 주머니", "튼튼한 일반 가죽 주머니", "튼튼한 고급 가죽 주머니", "튼튼한 최고급 가죽 주머니"],
+		    옷감셋: ["튼튼한 저가형 옷감 주머니", "튼튼한 일반 옷감 주머니", "튼튼한 고급 옷감 주머니", "튼튼한 최고급 옷감 주머니"],
+		    실크셋: ["튼튼한 저가형 실크 주머니", "튼튼한 일반 실크 주머니", "튼튼한 고급 실크 주머니", "튼튼한 최고급 실크 주머니", "튼튼한 꽃바구니"],
+		    허브셋O: ["튼튼한 블러디 허브 주머니", "튼튼한 마나 허브 주머니", "튼튼한 선라이트 허브 주머니", "튼튼한 베이스 허브 주머니", "튼튼한 만드레이크 주머니"],
+      		허브셋N: ["튼튼한 골드 허브 주머니", "튼튼한 못쓰게 된 허브 주머니", "튼튼한 화이트 허브 주머니", "튼튼한 해독초 주머니", "튼튼한 포이즌 허브 주머니"],
+      		더헙셋O: ["더 튼튼한 블러디 허브 주머니", "더 튼튼한 마나 허브 주머니", "더 튼튼한 선라이트 허브 주머니", "더 튼튼한 베이스 허브 주머니", "더 튼튼한 만드레이크 주머니"],
+      		더헙셋N: ["더 튼튼한 골드 허브 주머니", "더 튼튼한 못쓰게 된 허브 주머니", "더 튼튼한 화이트 허브 주머니", "더 튼튼한 해독초 주머니", "더 튼튼한 포이즌 허브 주머니"]
+		};
+		
+	// 1) 세트명 → 아이템명 역인덱스 (setDefinitions 자동 반영)
+	const itemNameToSet = (() => {
+		const map = {};
+		Object.entries(setDefinitions).forEach(([setName, names]) => {
+			names.forEach(n => { map[n] = setName; });
+		});
+		return map;
+	})();
+	
+	// 2) 카테고리(세트명)별 판정 모드
+	//   - AB 모드: 작물/방직/허브 (C 독립)
+	//   - ABC 모드: 가죽/옷감/실크/꽃바구니/더헙 (C 포함)
+	const AB_MODE_SETS  = ["작물셋", "방직셋", "허브셋O", "허브셋N"];
+	const ABC_MODE_SETS = ["가죽셋", "옷감셋", "실크셋", "꽃바구니", "더헙셋O", "더헙셋N"];
+	
+	const temp_ju = ["튼튼한 블러디 허브 주머니", "튼튼한 마나 허브 주머니", "튼튼한 선라이트 허브 주머니", "튼튼한 베이스 허브 주머니", "튼튼한 만드레이크 주머니", "튼튼한 골드 허브 주머니", "튼튼한 못쓰게 된 허브 주머니", "튼튼한 화이트 허브 주머니", "튼튼한 해독초 주머니", "튼튼한 포이즌 허브 주머니",
+					 "더 튼튼한 블러디 허브 주머니", "더 튼튼한 마나 허브 주머니", "더 튼튼한 선라이트 허브 주머니", "더 튼튼한 베이스 허브 주머니", "더 튼튼한 만드레이크 주머니", "더 튼튼한 골드 허브 주머니", "더 튼튼한 못쓰게 된 허브 주머니", "더 튼튼한 화이트 허브 주머니", "더 튼튼한 해독초 주머니", "더 튼튼한 포이즌 허브 주머니"];
+	const orderedSetDefinitions = [
+	    "작물셋", "방직셋", "유사 방직", 
+	    "가죽셋", "옷감셋", "실크셋", "실크셋+", "꽃바구니", "허브셋O", "허브셋N", "더헙셋O", "더헙셋N"
+	];
+	
+	let pouchOrder = [];
+	let completeCnt = 0;
+	let maxCompleteCnt = 0;
+	let isDisplaying = false; // 중복 호출 방지 플래그
+	let lastTap = 0; //모바일 더블탭 이벤트
+
+	const server_ch = { "류트": 38, "하프": 22, "울프": 14, "만돌린": 14 };
+	//{ "류트": 42, "하프": 24, "울프": 15, "만돌린": 15 }; //20250925 전투채널 업데이트
+	//전서버 전지역 채널링 호출 횟수 (41 + 23 + 14 + 14) × 18 = 1656회 ?? 17?
+	//한 지역 채널링 41 + 23 + 14 + 14 = 92회
+
+	const jumoney_key2 = {
+	  "튼튼한 달걀 주머니": "5110005",
+	  "튼튼한 감자 주머니": "5110006",
+	  "튼튼한 옥수수 주머니": "5110007",
+	  "튼튼한 밀 주머니" : "5110008",
+	  "튼튼한 보리 주머니" : "5110009",
+	  "튼튼한 양털 주머니": "5110010",
+	  "튼튼한 거미줄 주머니": "2041",
+	  "튼튼한 가는 실뭉치 주머니" : "2042",
+	  "튼튼한 굵은 실뭉치 주머니" : "2043",
+	  "튼튼한 저가형 가죽 주머니" : "5110014",
+	  "튼튼한 일반 가죽 주머니" : "5110015",
+	  "튼튼한 고급 가죽 주머니" : "5110016",
+	  "튼튼한 최고급 가죽 주머니" : "5110017",
+	  "튼튼한 저가형 옷감 주머니" : "5110018",
+	  "튼튼한 일반 옷감 주머니" : "5110019",
+	  "튼튼한 고급 옷감 주머니" : "5110020",
+	  "튼튼한 최고급 옷감 주머니" : "5110021",
+	  "튼튼한 저가형 실크 주머니" : "5110022",
+	  "튼튼한 일반 실크 주머니" : "5110023",
+	  "튼튼한 고급 실크 주머니" : "5110024",
+	  "튼튼한 최고급 실크 주머니" : "5110025",
+	  "튼튼한 꽃바구니" : "5110044",
+	  "튼튼한 블러디 허브 주머니": "bloody",
+	  "튼튼한 마나 허브 주머니": "mana",
+	  "튼튼한 선라이트 허브 주머니": "sunlight",
+	  "튼튼한 베이스 허브 주머니": "base",	  
+	  "튼튼한 만드레이크 주머니": "mandrake",
+	  "더 튼튼한 블러디 허브 주머니": "more_bloody",
+	  "더 튼튼한 마나 허브 주머니": "more_mana",
+	  "더 튼튼한 선라이트 허브 주머니": "more_sunlight",
+	  "더 튼튼한 베이스 허브 주머니": "more_base",
+	  "더 튼튼한 만드레이크 주머니": "more_mandrake"
+	};
+	
+	let dataCache = {};
+	let nextResetTime = null;  // 전역 리셋 시간
+	let API_KEY = "";
+	let SHARE_KEY = false;
+	let imageCache = new Map();
+	
+	let lastRequestTime = 0; // 마지막 요청 시간 추적
+	let requestCount = 0; // 현재 초의 호출 횟수
+	let inProgressCalls = new Set(); // 진행 중인 호출을 저장
+	let isCheckingServers = false; // 진행 상태 플래그
+	let abortController = null; // 이전 호출을 추적하기 위한 컨트롤러 변수
+	let autoFiltering = false;
+	let itemCall = false;
+	let waitFiltering = false;
+	let erinTimeSync = false;
+	
+	async function throttle() {
+	  const now = Date.now();
+
+	  // 호출 간 최소 0.22초(220ms) 경과 여부 확인
+	  const elapsed = now - lastRequestTime;
+	  const waitTime = 250 - elapsed;
+	
+	  if (waitTime > 0) {
+	    console.log(`대기 중: ${waitTime}ms`);
+	    document.getElementById("curCallState").innerText = `대기 중: ${waitTime}ms`;
+	    await new Promise((resolve) => setTimeout(resolve, waitTime));
+	  }
+	
+	  // 호출 이후 시간 갱신
+	  lastRequestTime = Date.now();
+	
+	  // 호출 횟수 증가 및 5회 초과 시 0.75초 대기
+	  requestCount++;
+	  if (requestCount >= 5) {
+	    console.log(`5회 호출 완료. 755ms 대기 중...`);
+	    document.getElementById("curCallState").innerText = `5회 호출 완료. 755ms 대기 중...`;
+	    await new Promise((resolve) => setTimeout(resolve, 755));
+	    requestCount = 0; // 호출 횟수 초기화
+	  }
+	}
+	
+	// 초기 설정
+	//getNpcData();
+	
+	const localApiKey = localStorage.getItem("apiKey");		
+	const localServer = localStorage.getItem("server");
+	let localChannel = localStorage.getItem("channel");
+	const localNpc = localStorage.getItem("npc");
+	const localShareKey = localStorage.getItem("shareKey");
+	const align = localStorage.getItem("filterAlign");
+	const autoFilter = localStorage.getItem("autoFiltering");
+	const checkbox = document.getElementById('shareKey');
+	const tables = document.getElementById("tables");	
+	const filterForm = document.getElementById('filterForm');
+	const filterAlign = document.getElementById("filterAlign");
+	const autoFilterCheck = document.getElementById("autoFiltering");
+	
+	if (localServer) 
+	  document.getElementById("server").value = localServer;
+	
+	if (localChannel)
+	  document.getElementById("ch").value = localChannel;
+	
+	if (localNpc)
+	  document.getElementById("npc_nm").value = localNpc;
+	  
+	if(localShareKey === "true"){
+	  SHARE_KEY = true;		
+	  checkbox.checked = true; // 체크박스 체크 설정
+	}else{
+	  SHARE_KEY = false;	
+	  checkbox.checked = false; // 체크박스 체크 설정
+	}
+	
+	if(align === "true") {
+		filterAlign.checked = true;
+		changeFilterAlign();
+	}
+	
+	if(autoFilter === "true") {
+		autoFilterCheck.checked = true;
+		changeAutoFiltering();
+	}
+		  
+	// 체크박스의 상태가 변경될 때 SHARE_KEY 값을 변경합니다.
+
+	checkbox.addEventListener('change', function() {
+		if (checkbox.checked) {
+			SHARE_KEY = true;  // 체크되면 true
+			localStorage.setItem("shareKey", true);
+			console.log('공용키 사용 활성화: ', SHARE_KEY);
+		} else {
+			SHARE_KEY = false;  // 체크 해제하면 false
+			localStorage.setItem("shareKey", false);
+			console.log('공용키 사용 비활성화: ', SHARE_KEY);
+		}
+	});
+	
+	filterAlign.addEventListener("change", changeFilterAlign);
+	autoFilterCheck.addEventListener("change", changeAutoFiltering);
+	
+	function changeFilterAlign(){
+		if(filterAlign.checked ){
+			tables.classList.add("vertical");
+			localStorage.setItem("filterAlign", true);
+		}else{
+			const tbClass = tables.classList;
+			localStorage.setItem("filterAlign", false);
+			if(tbClass.contains("vertical")) tbClass.remove("vertical");
+		}
+	}
+	
+	function changeAutoFiltering(){
+		if(autoFilterCheck.checked){
+			autoFiltering = true;
+			localStorage.setItem("autoFiltering", true);
+		}else{
+			autoFiltering = false;
+			localStorage.setItem("autoFiltering", false);
+		}		
+	}
+	
+	if(localStorage.filters) loadFiltersFromLocalStorage();
+	
+	setChannel(); //localServer 설정 한 후에		
+	prevNextCh();
+	prevNextLocation();
+	
+	//초기 리스트 바로 생성을 막기 위해 setChannel 이후 앱키 설정
+	if (localApiKey) {
+	  document.getElementById("apiKey").value = localApiKey;
+	  API_KEY = localApiKey;
+	}
+
+	function getLocatioin() {
+		const npc_nm = document.getElementById("npc_nm").value;
+		return npc_nm === "all" ? Object.keys(locations) : [npc_nm];
+	}
+
+	function setChannel() {
+		const chSelect = document.getElementById("ch");
+		const serverSelect = document.getElementById("server").value;
+		const maxCh = server_ch[serverSelect];
+		maxCompleteCnt = maxCh - 1; //11채 제외
+
+		chSelect.innerHTML = "";
+		
+		for (let i = 1; i <= maxCh; i++) {
+			if (i === 11) continue;
+			let option = document.createElement('option');
+			option.value = i;
+			option.text = `${i}채`;
+			if (localChannel == i){
+				//console.log(`localChannel[${localChannel}], i[${i}]`);
+				option.setAttribute("selected", true);
+			}
+				
+			chSelect.appendChild(option);
+		}
+				
+		if(API_KEY != "" || SHARE_KEY) chSelect.dispatchEvent(new Event('change'));
+	}
+
+	async function getNpcData() {
+		if(API_KEY == "" && !SHARE_KEY) {
+			alert("API KEY를 입력해주세요");
+			return false;
+		}
+		
+		// 이전 호출이 진행 중이면 중단
+		// 전체에서 로딩 중에 마을 이동의 경우 리스트 생성이 안 멈추던 증상 해결
+	    if (abortController) {
+	        abortController.abort();
+	    }
+	    
+	    const tbClass = tables.classList;
+  		if(tbClass.contains("vertical")) tbClass.remove("vertical");
+  		if(tbClass.contains("filtering")) tbClass.remove("filtering");  
+	    
+	     // 새로운 호출에 사용할 컨트롤러 생성
+    	abortController = new AbortController();
+    	const signal = abortController.signal;		
+		const server_name = document.getElementById("server").value;
+		const channel = document.getElementById("ch").value;
+		const locations = getLocatioin();
+
+		tables.innerHTML = "";
+		
+		if( isResetNeeded() ) {
+			console.log("캐시된 데이터 삭제");
+			dataCache = {};
+			imageCache = new Map();
+		}
+		
+		let shouldStop = false; // 호출 중단 여부를 결정하는 플래그 변수
+		completeCnt = 0;
+		maxCompleteCnt = Object.keys(locations).length;
+		try {
+			itemCall = true;
+			for (const npc of locations) {
+	            if (shouldStop) break; // 중단 플래그가 설정되면 반복 중단
+				const result = {data: await fetchNpcData(npc, server_name, channel, signal)};
+	
+		        if (result.error) {
+		            console.warn(`Error: ${result.error.name}: ${result.error.message}`);
+		            //getErrorMessage(npc, result.error.message);
+		            shouldStop = true; // 에러 발생 시 중단 플래그 설정
+		            break;
+		        }
+		        
+		        if (result && result.data && result.data.length > 0) {
+	                // 비동기 함수 호출 (await로 작업 완료까지 기다림) 
+	                await getJumoney(result.data, npc, signal);
+	            } else {
+	                return false; // 조건에 맞지 않으면 false 반환
+	            }
+	            
+	            
+				// .item 아래에 있는 .img-area에만 더블 클릭 이벤트 리스너 추가
+				document.querySelectorAll(".item .img-area").forEach(imgArea => {
+				    imgArea.addEventListener("dblclick", singleChanneling);
+				});				
+				
+				document.querySelectorAll(".modal-open").forEach(button => {
+					button.addEventListener("click", channelModal);
+				});
+				
+				
+				document.querySelectorAll(".captureSimpleBtn").forEach(button => {
+					button.addEventListener("click", captureSimple);
+				});
+				
+				//모바일 더블 클릭			
+				document.querySelectorAll(".item .img-area").forEach((imgArea) => {
+				  imgArea.addEventListener("touchend", handleTouchEnd, { passive: false });
+				});
+
+			}			
+            itemCall = false;
+            
+            if(waitFiltering || autoFiltering) document.getElementById('applyColorFilter').click();
+			document.querySelectorAll('.item_nm').forEach(elem => {
+				elem.addEventListener('click', toggleLocationHidden);
+			});				
+			/*
+			document.querySelectorAll('.qCode-copy').forEach(elem => {		
+				elem.addEventListener('click', copyQcode);
+			});
+			*/
+	        //console.log('주머니 리스트 생성 완료');
+		}catch (error) {
+        	console.error('에러 발생:' + error);
+        	return false; // 에러 발생 시 false 반환
+   		}
+		
+	}
+	
+	// 이벤트 핸들러 함수 정의
+	function toggleLocationHidden(event) {
+	    const parent = event.currentTarget.parentElement; // 부모 요소 찾기
+	    const locationNm = parent.querySelector('.location_nm'); // .location_nm 요소 찾기
+	
+	    if (locationNm) {
+	        locationNm.classList.toggle('hidden'); // hidden 클래스 토글
+	    }
+	}
+	
+	function copyQcode(event) {
+		const dataAttribute = event.target.parentElement.querySelector('img');
+	    if (dataAttribute) {
+	        let srcValue = dataAttribute.getAttribute('data-qCode'); // img의 src 값 가져오기		           
+			srcValue = getQcode(srcValue);
+			
+	        // 클립보드에 복사
+	        navigator.clipboard.writeText(srcValue)
+	            .then(() => alert('q코드가 클립보드에 복사되었습니다: ' + srcValue))
+	            .catch(error => console.error("클립보드에 복사하는 데 실패했습니다: ", error));
+	    } else {
+	        console.error('img 태그를 찾을 수 없습니다.');
+	    }
+	}
+	
+	function getQcode(url){
+		const index = url.lastIndexOf("q=");
+		const qValue = url.slice(index + 2);
+		
+		return qValue;
+	}
+	
+	// RGB 배열을 HEX 문자열로 변환하는 함수 (값에 '?'가 포함될 경우 대응)
+	function rgbToHex(rgbArray) {
+	    return (
+	        '#' +
+	        rgbArray
+	            .map((value) =>
+	                value === '?' ? '??' : value.toString(16).padStart(2, '0').toUpperCase() // '?'는 '??'로 변환
+	            )
+	            .join('')
+	    );
+	}
+	
+	// RGB 배열을 RGB 문자열로 변환하는 함수 (값에 '?'가 포함될 경우 대응)
+	function rgbToRgbString(rgbArray) {
+	    return `${rgbArray
+	        .map((value) => (value === '?' ? '?' : value)) // '?'가 들어가면 그대로 유지
+	        .join(' ')}`;
+	}
+	
+	// RGB 객체에서 '?'를 반영한 HEX와 RGB 문자열로 변환하는 함수
+	function formatColorValuesWithPlaceholder(colorValues, itemName) {
+	    const result = {};
+	    for (const [key, rgbArray] of Object.entries(colorValues)) {
+	        result[key] = {
+	            hex: rgbToHex(rgbArray),
+	            rgb: rgbToRgbString(rgbArray),
+	        };
+	    }
+	    return result;
+	}
+	
+	async function getJumoney(data, npc, signal) {
+		if (signal && signal.aborted) {
+	        return; // 중단 요청이 있을 경우 즉시 반환
+	    }
+		if (data.length < 1 && data.error) {
+			alert(data.error.name + "\n" + data.error.message);
+			console.warn(`No shop data for NPC: ${npc}`);
+			return false;
+		}
+	
+		const items = data;
+		
+		let table = `<div class="location-area" data-npc="${npc}" data-location="${locations[npc]}"><h2 class="area-capture">${locations[npc]}<span class="location-img modal-icon icon-Image--Streamline-Phosphor" style="display:none;"></span></h2><div class="container">`;
+		let count = 0;
+		const location_nm = locations[npc];
+
+		for (const key of items) {
+			const url = key.image_url;
+			const item_nm = key.item_display_name;
+			const qCode = getQcode(url);
+			const itemOpt = key.item_option;
+			const tempImg = temp_ju.includes(item_nm);
+			
+			let color;
+			if (tempImg) {
+			    const raw = parseColorsFromOptionsToArrays(itemOpt);
+			    color = formatColorValuesWithPlaceholder(raw, item_nm);
+			} else {
+			    let raw = await decodeGivenColorQuery(qCode);
+			    raw = ensureRGBArrays(raw);
+			    color = formatColorValuesWithPlaceholder(raw, item_nm);
+			}
+						
+			const keys = computeSetKeys(item_nm, color);			
+			//const colorArray = Object.values(color).map(entry => entry.hex);
+			//const color = extractItemColorsFromUrl(url);
+			//if (count % max_cnt === 0) table += "<tr>";
+			//캡쳐용 마을 이름 숨기기		
+						
+			table += `<div class="item">`; //<span class="icon icon-repeat channeling"></span>`;
+			//table += `<span class="icon icon-copy qCode-copy"></span>`;
+			table += `<span class="icon icon-left icon-Image--Streamline-Phosphor captureSimpleBtn"></span>`;
+			table += `<span class="icon icon-external-link modal-open"></span>`;
+			table += `<h3 class="location_nm${npc === "델" || npc === "델렌" ? "" : " hidden"}" data-key="${npc}">${location_nm}</h3>`
+			//table += `<img src="${url}" alt="${item_nm}" class="api-img"><label class="item_nm">${item_nm}</label></div>`;
+			table += `<div class="img-area"><div class="loading-spinner" data-idx="${count}"></div>`;
+			table += `<img src="" alt="${item_nm}" class="api-img hidden" onerror="this.src='${url}'" data-mode="${keys.mode}" data-ab="${keys.abKey}" data-abc="${keys.abcKey}" data-qCode="${(tempImg? extractColorKeyFromOptions(itemOpt):qCode)}">`; 
+			table += `<img src="${url}" alt="${item_nm}" class="api-img-org" style="display:none">`;
+			//table += `<img src="${jumoney_url}${jumoney_key[count]}?colors=${getUrlColor(color)}" class="mabibase-img2" onerror="this.src='./cute.png'" style="display:none;">`;
+			table += `<img class="mabibase-img" data-index="${count}" item-name="${item_nm}" onerror="this.src='./cute.png'"></div>`;
+			table += `<label class="item_nm">${item_nm}</label>${setColorLabel(color)}`;
+			table += `<input type="text" class="filter-name-toggle" required><label class="filter-name" style="display:none"></label>`;
+			table += `</div>`;
+			
+			if(npc != "델" && npc != "델렌") {
+				pouchOrder[count] = item_nm;
+				count++;	
+			}
+			//if (count % max_cnt === 0) table += "</tr>";
+		}
+		table += "</div></div>";
+		
+		tables.insertAdjacentHTML('beforeend', table);
+		document.getElementById("loading").style.display = "none";
+		tables.style.display = "";
+		
+		// 이미지 로드를 비동기로 처리 (Promise.all 사용)
+	    const imagePromises = items.map(async (key, index) => {
+	        const item_nm = key.item_display_name;
+	        let qCode = getQcode(key.image_url);
+	        const locationArea = document.querySelector(`.location-area[data-npc="${npc}"`);
+	        const spinner = locationArea.querySelector(`.loading-spinner[data-idx="${index}`); // 로딩 스피너
+	        const tempImg = temp_ju.includes(item_nm);
+	        const itemOpt = key.item_option;
+	        
+	        let color;
+	        if(tempImg){
+	        	qCode = extractColorKeyFromOptions(itemOpt);
+	        	const raw = parseColorsFromOptionsToArrays(itemOpt);
+			    color = formatColorValuesWithPlaceholder(raw, item_nm);
+	        }else{
+	        	color = decodeGivenColorQuery(qCode);
+	        	color = formatColorValuesWithPlaceholder(color);
+	        }
+	        color = Object.values(color).map(entry => entry.hex);
+	 
+	         // 'open'과 'close' 이미지를 병렬로 생성
+	        //if(!tempImg){
+			    const [imgCloseUrl, imgUrl] = await Promise.all([
+			        createJumoneyImage(item_nm, color, "close"),
+			        createJumoneyImage(item_nm, color, "open"),
+			    ]);
+			
+		        // 해당 인덱스에 해당하는 이미지 태그를 업데이트
+		        const imgCloseElement = locationArea.querySelector(`.api-img[data-qCode="${qCode}"]`);
+		        const imgElement = locationArea.querySelector(`.mabibase-img[data-index="${index}"][item-name="${key.item_display_name}"]`);
+		        
+		        //imgCloseElement.classList.add("hidden"); // 로딩 중에는 숨김
+		        
+		        if (imgCloseElement) {
+		            imgCloseElement.src = imgCloseUrl;
+		            	
+				    // 이미지가 로드되면 스피너 제거
+				    imgCloseElement.onload = () => {
+				        spinner.style.display = "none"; // 스피너 숨김
+				        //imageCache.set(cacheKey, imageUrl);
+				        imgCloseElement.classList.remove("hidden"); // 이미지 표시
+				    };
+			
+				    // 이미지 로딩 실패 시 대체 이미지 사용
+				    imgCloseElement.onerror = () => {
+				        spinner.style.display = "none"; // 스피너 숨김
+				        imgCloseElement.classList.remove("hidden"); // 이미지 표시
+				    };
+				    
+		        }
+		        if (imgElement) {
+		            imgElement.src = imgUrl;
+		        }
+	        //}else{
+			//	spinner.style.display = "none"; // 스피너 숨김
+				//imgCloseElement.classList.remove("hidden"); // 이미지 표시
+			//}
+	        
+	    });
+	    
+	    // 모든 이미지 로드가 완료될 때까지 기다림 (선택사항)
+   		await Promise.all(imagePromises);
+	}
+	function makeRGBString(option_list) {
+	    if (!Array.isArray(option_list)) return "";
+	    return option_list
+	        .filter(opt => opt.option_type === "아이템 색상" && opt.option_value)
+	        .map(opt => opt.option_value.trim())
+	        .join(";");
+	}
+	
+	function makeColorKey(option_list) {
+	    const labelMap = { "파트 A": "A", "파트 B": "B", "파트 C": "C", "파트 D": "D" };
+	    const colors = { A: "-", B: "-", C: "-", D: "-" };
+	
+	    if (Array.isArray(option_list)) {
+	        option_list.forEach(opt => {
+	            if (opt.option_type === "아이템 색상" && labelMap[opt.option_sub_type]) {
+	                const key = labelMap[opt.option_sub_type];
+	                const val = (opt.option_value ?? "").trim();
+	                if (val) colors[key] = val;
+	            }
+	        });
+	    }
+	    return `COLOR|A=${colors.A}|B=${colors.B}|C=${colors.C}`; //|D=${colors.D}`;
+	}
+/*
+	function setColorLabel(color) {
+		if (!color) return '';
+		let result = '<div class="color-info">';
+		const keys = Object.keys(color);
+		for (let i = 0; i < keys.length; i++) {
+			const key = keys[i];
+			result += `<p class="color_rect_p" data-key="${key}"><span class="color_rect" style="background:${color[key].hex};"></span><label class="hex">${color[key].hex}</label><label class="rgb">${color[key].rgb}</label></p>`;
+		}
+		result += "</div>";
+		return result;
+	}
+*/
+	// 출력 모양 유지: ◼ #HEX  R G B  (추가 라벨 없음)
+	// 최대 4개까지 표시(더헙셋 대응). 키 순서는 A,B,C,D가 있으면 그 순서, 없으면 Object.keys 순서.
+	function setColorLabel(color, opts = {}) {
+	  if (!color) return '';
+	  const { max = 4 } = opts;
+	
+	  // A,B,C,D 우선 정렬 → 나머지 키(있다면) 순으로
+	  const preferred = ['A','B','C','D'];
+	  const keys = [
+	    ...preferred.filter(k => Object.prototype.hasOwnProperty.call(color, k)),
+	    ...Object.keys(color).filter(k => !preferred.includes(k))
+	  ];
+	
+	  let result = '<div class="color-info">';
+	  let shown = 0;
+	  
+	  for (const key of keys) {
+	    const v = color[key];
+	    if (!v || !v.hex || !v.rgb || v.hex == "#??????") continue;        // 값이 비면 건너뜀
+	    result += `<p class="color_rect_p" data-key="${key}">
+	      <span class="color_rect" style="background:${v.hex};"></span>
+	      <label class="hex">${v.hex}</label>
+	      <label class="rgb">${v.rgb}</label>
+	    </p>`;
+	    shown++;
+	    if (shown >= max) break;                     // 최대 4개까지만
+	  }
+	
+	  result += '</div>';
+	  return result;
+	}
+	
+	// 서버 변경 시 채널 목록 재설정
+	document.getElementById("server").addEventListener("change", function() {
+		const server = this.value; // 선택한 서버 가져오기
+		localStorage.setItem("server", server); // 로컬 스토리지에 저장
+		localChannel = 1; //서버 선택하면 무조건 초기화
+	  	setChannel();
+	});
+	
+	document.getElementById("npc_nm").addEventListener("change", function() {
+		const npc = this.value; // 선택한 서버 가져오기
+	  	localStorage.setItem("npc", npc); // 로컬 스토리지에 저장
+		getNpcData();
+	});
+	
+	//document.getElementById("ch").addEventListener("change", getNpcData);	
+	document.getElementById("setApiKey").addEventListener("click", function() {
+		API_KEY = document.getElementById("apiKey").value;
+		tables.classList.remove("filtering");
+		getNpcData();
+	});
+	
+	// API 키 입력 필드에 이벤트 리스너 추가
+	document.getElementById("apiKey").addEventListener("input", function() {
+		const apiKey = this.value; // 입력값 가져오기
+		localStorage.setItem("apiKey", apiKey); // 로컬 스토리지에 저장
+	});
+
+	// 채널 입력 필드에 이벤트 리스너 추가
+	document.getElementById("ch").addEventListener("change", function(e) {
+		const channel = this.value; // 입력값 가져오기
+		if( !e.detail ) localStorage.setItem("channel", channel); // 로컬 스토리지에 저장
+		getNpcData();
+	});	
+	
+	// 11채널 제외하고 한 지역의 총 호출 횟수 계산
+	function allServerChannelCount() {
+		let totalCalls = 0;
+	
+		Object.values(server_ch).forEach(maxChannels => {
+			const validChannels = maxChannels - 1; // 11채널 제외
+	 		totalCalls += validChannels;
+	 	});
+	
+		 return totalCalls;
+	}
+
+	// 채널 전환 버튼
+	function prevNextCh() {
+		const selectBox = document.getElementById('ch');
+		const prevButton = document.getElementById('prev');
+		const nextButton = document.getElementById('next');
+			
+		prevButton.addEventListener('click', function () {
+				
+			selectBox.selectedIndex = selectBox.selectedIndex === 0 ? selectBox.options.length - 1 : selectBox.selectedIndex - 1;
+			selectBox.dispatchEvent(new CustomEvent('change', { detail: {non_select: true }}));
+   
+		});
+
+		nextButton.addEventListener('click', function () {
+			selectBox.selectedIndex = selectBox.selectedIndex === selectBox.options.length - 1 ? 0 : selectBox.selectedIndex + 1;
+			selectBox.dispatchEvent(new CustomEvent('change', { detail: {non_select: true }}));
+		});
+	}
+	
+	// 지역 전환 버튼
+	function prevNextLocation() {
+		const selectBox = document.getElementById('npc_nm');
+		const prevButton = document.getElementById('prevLo');
+		const nextButton = document.getElementById('nextLo');
+
+		prevButton.addEventListener('click', function () {
+			const index = selectBox.selectedIndex;
+			const options = selectBox.options;
+			
+			//전체는 마을 버튼 이동에서 못하게
+			selectBox.selectedIndex = (index === 1 || index === 0) ? options.length - 1 : index - 1;
+			selectBox.dispatchEvent(new Event('change'));
+		});
+
+		nextButton.addEventListener('click', function () {
+			let index = selectBox.selectedIndex;
+			const options = selectBox.options;
+			
+			//전체는 마을 버튼 이동에서 못하게
+			selectBox.selectedIndex = index === options.length - 1 ? 1 : index + 1;
+			selectBox.dispatchEvent(new Event('change'));
+		});
+	}
+	
+	//해당 지역 전체 채널링 - 단독이랑도 섞으면
+	async function checkSetAllServers(all) {
+		 
+	    const tbClass = tables.classList;
+	    let dellsCnt = false;
+  		if(tbClass.contains("vertical")) tbClass.remove("vertical");
+  		
+		if(isResetNeeded()){
+			Swal.fire({
+			  icon: "error",
+			  title: "실패",
+			  html: "리셋 시간이 지나 불러올 수 없습니다.<br/>팔레트를 다시 조회 후 시도해주세요."
+			});
+			
+			return;
+		}
+		
+	    if (isCheckingServers) {
+	        console.log("이미 서버 확인 중입니다. 중복 실행 방지.");
+	        return; // 중복 실행 방지
+	    }
+		
+	    const selectNpcEl = document.getElementById("npc_nm");
+	    const npc = selectNpcEl.value;
+	    const items = document.querySelectorAll('.item:not(.nomatch-addItem)');
+	    
+	    
+		// ✅ 마을 전체일 때도 채널링 허용(델/델렌 제외)
+		const npcList = (npc === "all")
+		  ? Object.keys(locations).filter(n => n !== "델" && n !== "델렌")
+		  : [npc];
+		  
+	    if (npc === "all") {
+			return alert("특정 지역을 선택해야 사용할 수 있습니다.", () => false);
+			
+	        //if(SHARE_KEY) return alert("공용키 사용은 특정 지역을 선택해야 사용할 수 있습니다.", () => false);
+	        //isCheckingServers = false;
+	        //hideLoadingOverlay(); // 로딩 화면 숨김
+	        
+	       // const allNpcs = Object.keys(locations).filter(name => name !== "델" && name !== "델렌");	        
+	    } else if (npc == "all" && items.length < 1) {
+	        isCheckingServers = false;
+	        hideLoadingOverlay();
+	        alert("지역 주머니 리스트 생성 후 다시 시도해주세요.");
+	        throw new Error("리스트가 생성되지 않음");
+	    }
+	    
+	    let servers = [document.getElementById("server").value];
+	    if (all) {
+	        servers = Object.keys(server_ch); // 모든 서버 목록 가져오기
+	        maxCompleteCnt = allServerChannelCount();
+	    } else {
+	        maxCompleteCnt = server_ch[servers[0]] - 1;
+	    }
+	    
+		if (npc === "all") {
+			const count = npcList.length;
+			const special = 2;
+			//const special = (npcList.includes("델") ? 1 : 0) + (npcList.includes("델렌") ? 1 : 0);
+			// 일반 마을: baseMax, 델/델렌: 1
+			maxCompleteCnt = maxCompleteCnt * count + special;
+		}
+	
+	    try {		
+	    	showLoadingOverlay(); // 로딩 화면 표시
+	    	isCheckingServers = true; // 플래그 설정
+	        completeCnt = 0;
+	        
+	        for (const curNpc of npcList) {
+				let groupedItems = {}; // `q` 값으로 주머니를 지역별로 그룹화
+		        for (const server of servers) {
+					if( (curNpc == "델" || curNpc == "델렌") && dellsCnt ) break;
+		            const maxCh = server_ch[server];
+					
+		            for (let ch = 1; ch <= maxCh; ch++) {
+		                if (ch === 11) continue; // 11채널 제외
+		
+		                const data = await fetchNpcData(curNpc, server, ch);
+		                
+		                if( (curNpc == "델" || curNpc == "델렌") && dellsCnt ) break;
+		                if(curNpc == "델" || curNpc == "델렌") dellsCnt = true;
+		
+		                if (data.error) {
+		                    hideLoadingOverlay();
+		                    isCheckingServers = false; // 플래그 해제
+		                }	                
+		
+		                data.forEach(item => {
+		                    //const qValue = extractQValue(item.image_url); // `q` 값 추출
+		                    // ⬇ 변경된 부분: temp_ju면 색상키, 아니면 기존 q값 사용
+		                    //250913 변경 이전
+		                    /*
+	                    	const key = isHerbPouch(item.item_display_name)
+	                        ? extractColorKeyFromOptions(item.item_option)    // 허브 주머니: 파트 A/B/C RGB로 그룹화
+	                        : extractQValue(item.image_url);                  // 그 외: 기존 q값으로 그룹화
+	                        */
+
+							const item_nm = item.item_display_name;
+		
+							let rawColors;
+							if (isHerbPouch(item_nm)) {
+								const raw = parseColorsFromOptionsToArrays(item.item_option);
+		    					rawColors = formatColorValuesWithPlaceholder(raw);
+							} else {
+								//const q = extractQValue(item.image_url);
+								const q = getQcode(item.image_url);
+								const raw = decodeGivenColorQuery(q);
+								//rawColors = ensureRGBArrays(raw);
+								rawColors = formatColorValuesWithPlaceholder(raw);
+							}
+							
+	                        const keys = computeSetKeys(item_nm, rawColors);
+	                        const abKey = keys.abKey;
+		                    // `q` 값으로 초기화
+		                    if (!groupedItems[abKey]) {
+		                        groupedItems[abKey] = {};
+		                    }
+		
+		                    if (!groupedItems[abKey][item_nm]) {
+		                        groupedItems[abKey][item_nm] = {
+		                            servers: {},
+		                            item_data: item
+		                        };
+		                    }
+		
+		                    if (!groupedItems[abKey][item_nm].servers[server]) {
+		                        groupedItems[abKey][item_nm].servers[server] = [];
+		                    }	                    
+			
+		                    // 채널 번호 추가
+		                    if (!groupedItems[abKey][item_nm].servers[server].includes(ch)) {
+		                        groupedItems[abKey][item_nm].servers[server].push(ch);
+		                    }
+		                });
+		            }
+	            }
+	            
+	            // 🔹 displaySets를 "현재 마을 컨텍스트"로 실행시키기 위해 잠깐 셀렉트 값을 바꿈
+			    //selectNpcEl.value = curNpc;			    
+			    document.getElementById("curDisplayState").innerHtml = `${curNpc} 호출 완료. 이미지 배열 생성 중<br/>`;
+			    await displaySets(groupedItems, all, curNpc);
+			    //selectNpcEl.value = npc;
+	        }
+	        //await displaySets(groupedItems, all); // 결과 표시	        
+	        if(waitFiltering || autoFiltering) document.getElementById('applyColorFilter').click();	        
+	        
+	    } catch (error) {
+			console.log(error);
+	        console.error("리스트가 생성되지 않았습니다.");
+	    } finally {
+	        hideLoadingOverlay(); // 로딩 화면 숨김
+	        isCheckingServers = false; // 플래그 해제
+	    }
+	}
+		
+	// 이미지 URL에서 `q` 값 추출
+	function extractQValue(url) {
+	    let urlParams = new URL(url).searchParams;
+	    urlParams = removeBetweenMarkers(urlParams.get("q"));
+	    return urlParams;
+	}
+
+	function sortGroupedItems(groupedItems) {
+	    const sortedItems = {};
+	    // 미리 정의한 순서에 따라 정렬
+	    pouchOrder.forEach(itemName => {
+	        for (const key in groupedItems) {
+	            if (groupedItems[key][itemName]) {
+	                if (!sortedItems[key]) sortedItems[key] = {};
+	                sortedItems[key][itemName] = groupedItems[key][itemName];
+	            }
+	        }
+	    });
+	    return sortedItems;
+	}
+	
+	// temp_ju 아이템인지 판별
+	function isHerbPouch(name) {
+	    return temp_ju.includes(name);
+	}
+	
+	// option_list에서 파트 A/B/C 색상을 키로 추출 (허브 주머니 전용)
+	// 결과 예: "COLOR|A=167,62,111|B=168,108,77|C=62,95,91"
+	function extractColorKeyFromOptions(option_list) {
+	    const labelMap = { "파트 A": "A", "파트 B": "B", "파트 C": "C" };
+	    const colors = { A: "-", B: "-", C: "-" };
+	
+	    if (Array.isArray(option_list)) {
+	        option_list.forEach(opt => {
+	            if (opt.option_type === "아이템 색상" && labelMap[opt.option_sub_type]) {
+	                const key = labelMap[opt.option_sub_type];
+	                const val = (opt.option_value ?? "").toString().trim();
+	                if (val) colors[key] = val;
+	            }
+	        });
+	    }	    
+	    
+	    return `COLOR|A=${colors.A}|B=${colors.B}|C=${colors.C}`;
+	}
+	
+	// temp_ju 배열에 있는 아이템만 걸러서 색상 데이터 매핑
+	function filterHerbPouches(items) {
+	    return items
+	        .filter(item => temp_ju.includes(item.item_display_name)) // 허브 주머니만 필터
+	        .map(item => {
+	            // 색상 정보 추출
+	            const colorInfo = {};
+	            item.option_list?.forEach(opt => {
+	                if (opt.option_type === "아이템 색상" && opt.option_sub_type && opt.option_value) {
+	                    colorInfo[opt.option_sub_type] = opt.option_value;
+	                }
+	            });
+	
+	            return {
+	                name: item.item_display_name,
+	                colors: colorInfo
+	            };
+	        });
+	}
+	
+	function removeBetweenMarkers(str) {
+	  const startMarker = "5042";
+	  const endMarker = "844350";
+	
+	  // 시작과 끝 부분 찾기
+	  const startIndex = str.indexOf(startMarker) + startMarker.length;
+	  const endIndex = str.indexOf(endMarker);
+	
+	  // 시작과 끝 사이의 부분 제거
+	  if (startIndex >= 0 && endIndex >= 0) {
+	    return str.slice(0, startIndex) + str.slice(endIndex);
+	  }
+	  // 마커가 없을 경우 원래 문자열 반환
+	  return str;
+	}
+	
+	function checkSetCompletionByServer(itemGroup) {
+	    const serverItems = {}; // 서버별 아이템 저장
+	    const serverSetStatus = {}; // 서버별 완성된 세트 저장
+	    const flowerBasketOnly = {}; // 꽃바구니만 있는 서버 저장
+	    const integratedSets = new Set(); // 통합으로만 완성된 세트 저장
+	    // 서버별 아이템 수집
+	    Object.entries(itemGroup).forEach(([itemName, { servers }]) => {
+	        Object.entries(servers).forEach(([server]) => {
+	            if (!serverItems[server]) serverItems[server] = new Set();
+	            serverItems[server].add(itemName);
+	        });
+	    });
+	
+	    // 각 서버에서 세트 완성 여부 확인
+	    Object.entries(setDefinitions).forEach(([setName, setItems]) => {
+	        Object.entries(serverItems).forEach(([server, items]) => {
+	            const hasAllItems = setItems.every(item => items.has(item));
+	
+	            if (setName === "방직셋") {
+	                const hasWool = items.has("튼튼한 양털 주머니");
+	                const hasOtherItems = ["튼튼한 거미줄 주머니", "튼튼한 가는 실뭉치 주머니", "튼튼한 굵은 실뭉치 주머니"]
+	                    .every(item => items.has(item));
+	
+	                const displayName = hasAllItems
+	                    ? "방직셋"
+	                    : !hasWool && hasOtherItems
+	                    ? "유사 방직"
+	                    : null;
+	
+	                if (displayName) {
+	                    if (!serverSetStatus[displayName]) serverSetStatus[displayName] = [];
+	                    serverSetStatus[displayName].push(server);
+	                }
+	            } else if (setName === "실크셋") {
+	                const hasFlowerBasket = items.has("튼튼한 꽃바구니");
+	                const silkItems = setItems.filter(item => item !== "튼튼한 꽃바구니");
+	                const hasSilkItems = silkItems.every(item => items.has(item));
+	
+	                const displayName = hasSilkItems
+	                    ? hasFlowerBasket
+	                        ? "실크셋+"
+	                        : "실크셋"
+	                    : null;
+	
+	                if (displayName) {
+	                    if (!serverSetStatus[displayName]) serverSetStatus[displayName] = [];
+	                    serverSetStatus[displayName].push(server);
+	                }
+	                
+	                // 꽃바구니만 있는 경우 처리
+	                if (!hasSilkItems && hasFlowerBasket) {
+	                    if (!flowerBasketOnly["꽃바구니"]) flowerBasketOnly["꽃바구니"] = [];
+	                    flowerBasketOnly["꽃바구니"].push(server);
+	                }
+	            } else if (hasAllItems) {
+	                if (!serverSetStatus[setName]) serverSetStatus[setName] = [];
+	                serverSetStatus[setName].push(server);
+	            }
+	        });
+	    });	
+	
+		 // 통합 세트 여부 확인
+	    Object.entries(setDefinitions).forEach(([setName, setItems]) => {
+	        const collectedItems = new Set();
+	
+	        Object.values(serverItems).forEach(items => {
+	            setItems.forEach(item => {
+	                if (items.has(item)) collectedItems.add(item);
+	            });
+	        });
+	        
+	        const isAlreadyComplete = Object.keys(serverSetStatus).some(status => status.includes(setName));
+	        
+	        if (!isAlreadyComplete) {
+		
+	             if (setName === "방직셋") {
+		            const hasOtherItems = ["튼튼한 거미줄 주머니", "튼튼한 가는 실뭉치 주머니", "튼튼한 굵은 실뭉치 주머니"]
+		                .every(item => collectedItems.has(item));
+		            const hasWool = collectedItems.has("튼튼한 양털 주머니");
+		            
+		            if (hasOtherItems && !hasWool && !serverSetStatus["유사 방직"]) {
+		                integratedSets.add("유사 방직");
+		            } else if (collectedItems.size === setItems.length) {
+		                integratedSets.add("방직셋");
+		            }
+		        }
+		        if (setName === "실크셋"){
+					const hasOtherItems = ["튼튼한 저가형 실크 주머니", "튼튼한 일반 실크 주머니", "튼튼한 고급 실크 주머니", "튼튼한 최고급 실크 주머니"]
+		                .every(item => collectedItems.has(item));
+		            const hasWool = collectedItems.has("튼튼한 꽃바구니");
+		            
+		            if (hasOtherItems && !hasWool && !serverSetStatus["실크셋"]) {
+		                integratedSets.add("실크셋");
+		            } else if (collectedItems.size === setItems.length) {
+		                integratedSets.add("실크셋+");
+		            }
+				}
+	            else if(collectedItems.size === setItems.length) {
+	                integratedSets.add(setName);
+	            }
+	        }
+	    });
+	    /*
+	    // 통합 세트 여부 확인
+	    Object.entries(setDefinitions).forEach(([setName, setItems]) => {
+	        const collectedItems = new Set();
+	
+	        Object.values(serverItems).forEach(items => {
+	            setItems.forEach(item => {
+	                if (items.has(item)) collectedItems.add(item);
+	            });
+	        });
+	
+	        const isAlreadyComplete = Object.keys(serverSetStatus).some(status => status.includes(setName));
+	
+	        if (!isAlreadyComplete && collectedItems.size === setItems.length) {
+	            integratedSets.add(setName);
+	        }
+	    });
+	    */
+	    return { serverSetStatus, integratedSets, flowerBasketOnly  };
+	}
+
+	
+   	async function displaySets(groupedItems, all, curNpc) {
+   	 	if (isDisplaying) {
+	        console.warn("displaySets가 이미 실행 중입니다.");
+	        return;
+	    }
+	    
+	    let targetContainer = document.querySelector(".location-area[data-npc='"+curNpc+"'] .container");
+	    if(curNpc == null || curNpc == undefined) targetContainer = document.querySelectorAll(".location-area")[0];
+	    
+	    isDisplaying = true;
+	    
+   	    targetContainer.querySelectorAll(".channel-info").forEach(element => element.remove());
+   	 	targetContainer.querySelectorAll(".nomatch-addItem").forEach(element => element.remove());
+   	 	
+   	    const sortedItems = sortGroupedItems(groupedItems);
+   	    const items = targetContainer.querySelectorAll('.item:not(.nomatch-addItem)');
+   	    const container = targetContainer;//document.querySelectorAll(".location-area")[0];
+   	 	const processedColors = new Set(); // 처리된 색상 키를 추적
+   	 	const location = locations[curNpc];
+   	 	
+		try {
+		    for (const [index, item] of items.entries()) {
+		       //const imageUrl = item.querySelector(".api-img-org").src;
+		       // const qValue = extractQValue(imageUrl);
+		       //250913 기존
+		       /*
+		        const qValue = isHerbPouch(item.querySelector(".api-img-org").alt)
+                        ? item.querySelector(".api-img").getAttribute("data-qcode")    // 허브 주머니: 파트 A/B/C RGB로 그룹화
+                        : extractQValue(imageUrl);
+               */
+				const key = item.querySelector(".api-img").getAttribute("data-ab");
+				
+				const matchedItemGroup = sortedItems[key];
+				if (matchedItemGroup) {
+					// 비동기적으로 createChannelInfoDiv를 호출하고 기다림
+					const channelInfoDiv = await createChannelInfoDiv(matchedItemGroup, all);
+					item.appendChild(channelInfoDiv); // 채널 정보 추가
+					processedColors.add(key);
+				}
+		    }
+	   	    
+	   		// 매칭되지 않은 색상 그룹을 새로 생성하여 .container에 추가
+		    for (const [key, itemGroup] of Object.entries(sortedItems)) {
+				let forloop = true;
+		        if (!processedColors.has(key) && forloop) {	
+					// 첫 번째 아이템의 데이터를 가져오기
+		        	const firstItemKey = Object.keys(itemGroup)[0]; 
+		        	const firstItemData = itemGroup[firstItemKey].item_data;
+        			//const qValue = getQcode(firstItemData.image_url);
+        			//250913 기존
+        			/*
+        			const qValue = isHerbPouch(firstItemKey)
+						  ? extractColorKeyFromOptions(firstItemData.item_option)   // 허브: 색상키
+						  : getQcode(firstItemData.image_url);
+					*/
+
+					let rawColors;
+					if (isHerbPouch(firstItemKey)) {
+						const raw = parseColorsFromOptionsToArrays(firstItemData.item_option);
+						rawColors = formatColorValuesWithPlaceholder(raw);
+					} else {
+						const q = getQcode(firstItemData.image_url);
+						const raw = decodeGivenColorQuery(q);
+						rawColors = ensureRGBArrays(raw);
+						rawColors = formatColorValuesWithPlaceholder(raw);
+					}
+					
+		            const newItem = await createNewItem(rawColors, itemGroup, all, location);
+		            if(!newItem) {
+						forloop = false;
+						return false;
+				    }        
+		            if(container) container.appendChild(newItem); // .container에 새 항목 추가
+		        }
+		    }
+	
+			document.querySelectorAll('.item_nm').forEach(elem => {
+				elem.removeEventListener('click', toggleLocationHidden);
+				elem.addEventListener('click', toggleLocationHidden);
+			});
+			
+			document.querySelectorAll('.icon-copy').forEach(elem => {
+				elem.removeEventListener('click', copyQcode);	
+				elem.addEventListener('click', copyQcode);
+			});	
+			
+			document.querySelectorAll(".modal-open").forEach(button => {
+				button.removeEventListener('click', channelModal);
+				button.addEventListener("click", channelModal);		
+			});
+			
+			
+			// .item 아래에 있는 .img-area에만 더블 클릭 이벤트 리스너 추가
+			document.querySelectorAll(".item .img-area").forEach(imgArea => {
+				imgArea.removeEventListener('dblclick', singleChanneling);
+			    imgArea.addEventListener("dblclick", singleChanneling);
+			});
+			
+			//모바일 더블 클릭			
+			document.querySelectorAll(".item .img-area").forEach((imgArea) => {
+			  imgArea.removeEventListener("touchend", handleTouchEnd, { passive: false });
+			  imgArea.addEventListener("touchend", handleTouchEnd, { passive: false });
+			});
+
+			
+		}finally{
+        	isDisplaying = false; // 함수 종료 시 플래그 해제
+			document.getElementById("curDisplayState").innerHtml = '<br/><br/>';    
+		}
+   	}
+   	
+   	//모바일 더블탭
+   	function handleTouchEnd(e) {
+	  const currentTime = new Date().getTime();
+	  const tapLength = currentTime - lastTap;
+	
+	  if (tapLength < 300 && tapLength > 0) {
+	    e.preventDefault(); // 기본 확대/축소 방지
+	    singleChanneling(e);
+	  }
+	
+	  lastTap = currentTime;
+	}
+   	
+	// 채널 정보 DIV 생성 함수
+	async function createChannelInfoDiv(itemGroup, all, returnObj) {
+		
+		if(itemGroup == null){
+			return "현재 서버에는 존재하지 않습니다.";
+		}
+		
+	    const channelInfoDiv = document.createElement("div");
+	    let channelType = document.getElementById("server").value;
+	    if(all) channelType = "통합";
+	    channelInfoDiv.classList.add("channel-info");
+	    channelInfoDiv.innerHTML = `<h4 class="toggle-all-info"><label class="server-mark ${channelType}" data-set="${channelType}" data-server="통합" style="padding-bottom: 1px;"></label>채널링 정보<span class="ico-view ico-up-triangle"></span></h4>`;
+	    let itemDataList = [];
+	    // 첫 번째 채널 정보 계산
+    	const firstChannels = getFirstChannelPerServer(itemGroup);
+	    const { serverSetStatus, integratedSets, flowerBasketOnly } = checkSetCompletionByServer(itemGroup);
+	    
+		const setsArea = document.createElement("div");		
+	    setsArea.classList.add("sets-area");
+	    
+	    const serverSetInfo = generateServerSetInfo(serverSetStatus, firstChannels);
+	    const integratedSetInfo = generateIntegratedSetInfo(integratedSets);
+	    const flowerBasketInfo = generateFlowerBasketInfo(flowerBasketOnly, firstChannels);		
+		
+	    if (serverSetInfo) {
+	        setsArea.innerHTML += `${serverSetInfo}`;
+	    }
+	    if (integratedSetInfo) {
+	        setsArea.innerHTML += `${integratedSetInfo}`;
+	    }
+	    if (flowerBasketInfo) {
+	        setsArea.innerHTML += `${flowerBasketInfo}`;
+	    }
+	   
+		channelInfoDiv.append(setsArea);
+	    const channelView = document.createElement("div");
+	    channelView.classList.add("channel-view");
+	    //channelView.style.display = "none";
+	    
+	    let previousSet = null;
+	    for (const [itemName, { servers, item_data }] of Object.entries(itemGroup)) {
+	        const {itemInfo, currentSet} = await generateItemInfo(itemName, servers, item_data, returnObj, itemDataList, previousSet);
+	        channelView.innerHTML += itemInfo;
+	        previousSet = currentSet; // 업데이트
+	    }
+	    
+	    channelInfoDiv.append(channelView);
+	    // 클릭 이벤트 핸들러 등록
+	    addClickEventsToChannelInfo(channelInfoDiv);
+	
+	    if (returnObj) return { div: channelInfoDiv, data: itemDataList };
+	    return channelInfoDiv;
+	    //return channelInfoDiv;
+	}
+	
+	// 특수 세트 정의
+	function getFirstChannelPerServer(itemGroup) {
+	    const firstChannelMap = {};
+	
+	    // orderedSetDefinitions의 순서를 유지하여 세트 정의
+	    orderedSetDefinitions.forEach(setName => {
+	        firstChannelMap[setName] = {};
+	    });
+	
+	    for (const [itemName, { servers }] of Object.entries(itemGroup)) {
+	        // 세트 여부 확인 함수 사용하여 세트 이름 찾기
+	        const matchingSets = orderedSetDefinitions.filter(set => isPartOfSet(set, itemName));
+
+	        if (matchingSets.length === 0) {
+	            continue; // 세트에 해당하지 않으면 건너뜀
+	        }
+	
+	        matchingSets.forEach(setName => {
+	            // 세트에 해당하는 서버의 첫 번째 채널 정보 저장
+	            for (const [server, channels] of Object.entries(servers)) {
+	                if (!firstChannelMap[setName][server]) {
+	                    firstChannelMap[setName][server] = [];
+	                }
+	                if (channels.length > 0) {
+	                    firstChannelMap[setName][server].push(channels[0]);
+	                }
+	            }
+	        });
+	    }
+	
+	    // 중복 제거 및 모든 세트에 대해 채널 정보를 유지
+	    Object.keys(firstChannelMap).forEach(setName => {
+	        Object.keys(firstChannelMap[setName]).forEach(server => {
+	            firstChannelMap[setName][server] = [...new Set(firstChannelMap[setName][server])];
+	        });
+	    });
+	
+	    // 빈 세트를 제거하여 유효한 세트만 유지하도록 수정
+	    Object.keys(firstChannelMap).forEach(setName => {
+	        if (Object.keys(firstChannelMap[setName]).length === 0) {
+	            delete firstChannelMap[setName];
+	        }
+	    });
+	
+	    //console.log('세트별 첫 채널:', JSON.stringify(firstChannelMap, null, 2)); // 디버깅용 로그
+	    return firstChannelMap;
+	}
+	
+	// 세트 여부 확인 함수
+	function isPartOfSet(setName, itemName) {
+	    return (
+	        (setName === "실크셋" && setDefinitions["실크셋"].includes(itemName) && itemName !== "튼튼한 꽃바구니") ||
+	        (setName === "실크셋+" && (setDefinitions["실크셋"].includes(itemName) || itemName === "튼튼한 꽃바구니")) ||
+	        (setName === "유사방직" && setDefinitions["방직셋"].includes(itemName) && itemName !== "튼튼한 양털 주머니") ||
+	        (setName === "꽃바구니" && itemName === "튼튼한 꽃바구니") ||
+	        (setDefinitions[setName]?.includes(itemName) && setName !== "실크셋")
+	    );
+	}
+
+	// 서버 세트 정보 생성 함수
+	function generateServerSetInfo(serverSetStatus, firstChannels) {
+	    return orderedSetDefinitions
+	        .map(setName => {
+	            if (serverSetStatus[setName]) {
+	                const servers = Object.keys(server_ch)
+	                    .filter(server => serverSetStatus[setName].includes(server))
+	                    .map(server => {
+	                        const channelNumbers = firstChannels[setName] && firstChannels[setName][server]
+	                            ? firstChannels[setName][server].join(", ")
+	                            : "";
+	                        // 서버 마크 안에 첫 번째 채널 정보 포함
+	                        return `<span class="set-by-server">
+	                        			<label class="server-mark ${server}" data-set="${setName}" data-server="${server}"></label>
+	                        			<span class="server-set-channel">${channelNumbers}</span>
+	                                </span>`;
+	                    })
+	                    .join(" ");
+	                return `<div class="set-info"><span class="setComplete ${setName}" data-set="${setName}">${setName}</span> ${servers}</div>`;
+	            }
+	            return null;
+	        })
+	        .filter(info => info !== null)
+	        .join("");
+	}
+	
+	// 통합 세트 정보 생성 함수
+	function generateIntegratedSetInfo(integratedSets) {
+	    return orderedSetDefinitions
+	        .filter(setName => integratedSets.has(setName))
+	        .map(setName => `
+	        	<div class="set-info">
+	        		<span class="setComplete ${setName}" data-set="${setName}">${setName}</span>
+	        		<span class="set-by-server">
+        				<label class="server-mark 통합" data-set="${setName}" data-server="통합"></label>
+        				<span class="server-set-channel"></span>
+        			</span>
+        		`
+	        )
+	        .join("</div>");
+	}
+	
+	// 꽃바구니 세트 정보 생성 함수
+	function generateFlowerBasketInfo(flowerBasketOnly, firstChannels) {
+	    if (flowerBasketOnly["꽃바구니"]) {
+	        const servers = Object.keys(server_ch)
+	            .filter(server => flowerBasketOnly["꽃바구니"].includes(server))
+	            .map(server => {
+	                        const channelNumbers = firstChannels["꽃바구니"] && firstChannels["꽃바구니"][server]
+	                            ? firstChannels["꽃바구니"][server].join(", ")
+	                            : "";
+	                        // 서버 마크 안에 첫 번째 채널 정보 포함
+	                        return `<span class="set-by-server">
+	                        			<label class="server-mark ${server}" data-set="꽃바구니" data-server="${server}"></label>
+	                                	<span class="server-set-channel">${channelNumbers}</span>
+	                                </span>`;
+	                    })
+	                    .join(" ");
+	        return `<div class="set-info"><span class="setComplete 꽃바구니" data-set="꽃바구니">꽃바구니</span> ${servers}</div>`;
+	    }
+	    return "";
+	}
+	
+	// 아이템 정보 생성 함수
+	async function generateItemInfo(itemName, servers, item_data, returnObj, itemDataList, previousSet) {
+	    //const qCode = getQcode(item_data.image_url);
+	    //let color = await decodeGivenColorQuery(qCode);
+	    //color = formatColorValuesWithPlaceholder(color, qCode);
+	    // ⬇ 여기만 교체
+	    let qCode, color;
+	
+	    if (isHerbPouch(itemName)) {
+	        // 허브: 옵션 → 배열로
+	        qCode = makeColorKey(item_data.item_option); // 기존 유지
+	        const raw = parseColorsFromOptionsToArrays(item_data.item_option);
+	        color = formatColorValuesWithPlaceholder(raw, itemName); //
+	    } else {
+	        // 비허브: 기존 경로 + 배열 보정만 추가
+	        qCode = getQcode(item_data.image_url);
+	        let raw = await decodeGivenColorQuery(qCode); // 기존 로직
+	        raw = ensureRGBArrays(raw);                   // 배열 보정
+	        color = formatColorValuesWithPlaceholder(raw, itemName); //
+	    }
+	
+	    // 구분선 추가를 위한 논리
+	    const currentSet = Object.keys(setDefinitions).find(setName => setDefinitions[setName].includes(itemName));
+	    let itemInfo = '';
+	
+	    if (currentSet && currentSet !== previousSet) {
+	        itemInfo += '<hr class="set-divider">';
+	    }
+	    
+	    itemInfo += `<p class="channel-info-item" data-item="${itemName}">
+	        <label class="info-jumoney-name"><span class="color_rect hidden_rect" alt="${color.C.hex}&nbsp;&nbsp;${color.C.rgb}" style="background:${color.C.hex};"></span>${itemName}</label><span class="viewColor_c" style="display:none">${color.C.hex}&nbsp;&nbsp;${color.C.rgb}</span>
+	        <span class="color-03" style="display:none" color-data="${color.A.hex}, ${color.B.hex}, ${color.C.hex}"></span>`;
+	
+	    if (returnObj) itemDataList.push({ dataItem: itemName, colorData: `${color.A.hex}, ${color.B.hex}, ${color.C.hex}` });
+	
+	    for (const [server, chList] of Object.entries(servers)) {
+			const firstChannel = `<strong>${chList[0]}</strong>`;
+        	const remainingChannels = chList.slice(1).length > 0 ? `, ${chList.slice(1).join(", ")}` : "";
+	        
+       		itemInfo += `<span class="info-channel all-server" data-server="${server}">
+            	<label class="server-mark ${server}"></label>${firstChannel}${remainingChannels}</span>`;
+	    }
+	
+	    return {itemInfo: itemInfo + "</p>", currentSet };
+	}
+	
+	// 서버 가시성 토글
+	function toggleChannelVisibility(setName, server, channelInfo, filterUse) {
+	    if (filterUse) {
+	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	            const itemName = item.getAttribute("data-item");
+	            item.style.display = isPartOfSet(setName, itemName) ? "block" : "none";
+	            item.querySelectorAll(".info-channel").forEach(channel => {
+	                channel.style.display = (channel.getAttribute("data-server") === server) ? "block" : "none";
+	            });
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo);
+	    }
+	}
+	
+	// 채널 가시성 리셋 //안쓰는거 같은데
+	function resetChannelVisibility(channelInfo) {
+	    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	        item.style.display = "block";
+	        item.querySelectorAll(".info-channel").forEach(channel => {
+	            channel.style.display = "block";
+	        });
+	    });
+	    channelInfo.querySelectorAll(".active").forEach(activeElement => {
+	        activeElement.classList.remove("active");
+	    });
+	}
+	// 이벤트 처리 함수: 세트와 서버 라벨 클릭
+	function addClickEventsToChannelInfo(channelInfoDiv) {
+	    channelInfoDiv.querySelectorAll(".setComplete").forEach(setElement => {
+	        setElement.addEventListener("click", (e) => {
+	            const setName = setElement.getAttribute("data-set");
+	            const channelInfo = e.target.closest(".channel-info");
+	            const activeComplete = channelInfo.querySelector(".setComplete.active");
+	            const activeServer = channelInfo.querySelector(".server-mark.active");
+	
+	            let filterUse = true;
+	
+	            if (activeServer) activeServer.classList.remove("active");
+	
+	            if (activeComplete && activeComplete !== e.target) {
+	                activeComplete.classList.remove("active");
+	            } else {
+	                filterUse = false; // 같은 요소를 클릭하면 필터 사용 취소
+	            }
+	
+	            if (!activeComplete) filterUse = true; // 맨 처음 클릭일 때
+	
+	            toggleSetVisibility(setName, channelInfo, filterUse);
+	            e.target.classList.toggle("active");
+	            e.stopPropagation();
+	        });
+	    });
+	
+	    channelInfoDiv.querySelectorAll(".sets-area .server-mark:not(.통합)").forEach(serverElement => {
+	        serverElement.addEventListener("click", (e) => {
+	            const server = serverElement.getAttribute("data-server");
+	            const setName = serverElement.getAttribute("data-set");
+	            const channelInfo = e.target.closest(".channel-info");
+	            const activeServer = channelInfo.querySelector(".server-mark.active");
+	            const activeComplete = channelInfo.querySelector(".setComplete.active");
+	            let filterUse = true;
+	
+	            if (activeComplete) activeComplete.classList.remove("active");
+	
+	            if (activeServer && activeServer !== e.target) {
+	                activeServer.classList.remove("active");
+	            } else {
+	                filterUse = false;
+	            }
+	
+	            if (!activeServer) filterUse = true;
+	
+	            toggleChannelVisibility(setName, server, channelInfo, filterUse);
+	
+	            e.target.classList.toggle("active");
+	            e.stopPropagation();
+	        });
+	    });
+	
+	    channelInfoDiv.querySelector(".toggle-all-info").addEventListener("click", (e) => {
+	        resetChannelVisibility(e.target.closest(".channel-info"), true); // 이벤트 객체를 매개변수로 전달
+	    });
+	        
+	    channelInfoDiv.querySelectorAll(".hidden_rect").forEach(elem => {
+	        elem.addEventListener("click", (e) => {
+				e.target.classList.toggle("show");
+			});
+		});
+
+	}
+	
+	// 특정 세트만 표시하는 함수
+	function toggleSetVisibility(setName, channelInfo, filterUse) {
+		viewChannelView(channelInfo);
+	    if (filterUse) {
+	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	            const itemName = item.getAttribute("data-item");
+	            const partOfSet = isPartOfSet(setName, itemName);
+	            item.style.display = partOfSet ? "block" : "none";
+	
+	            // 구분선 처리
+	            const previousElement = item.previousElementSibling;
+	            if (previousElement && previousElement.classList.contains("set-divider")) {
+	                previousElement.style.display = partOfSet ? "block" : "none";
+	            }
+	            
+	            item.querySelectorAll(".info-channel").forEach(channel => {
+	                channel.style.display = "block";
+	            });
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo, false);
+	    }
+	}
+	
+	// 특정 서버의 채널만 표시하는 함수
+	function toggleChannelVisibility(setName, server, channelInfo, filterUse) {
+		viewChannelView(channelInfo);
+	    if (filterUse) {
+	        channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	            const itemName = item.getAttribute("data-item");
+	            const partOfSet = isPartOfSet(setName, itemName);
+	            item.style.display = partOfSet ? "block" : "none";
+
+	            // 구분선 처리
+	            const previousElement = item.previousElementSibling;
+	            if (previousElement && previousElement.classList.contains("set-divider")) {
+	                previousElement.style.display = partOfSet ? "block" : "none";
+	            }
+  
+	            item.querySelectorAll(".info-channel").forEach(channel => {
+	                const channelServer = channel.getAttribute("data-server");
+	                channel.style.display = (channelServer === server) ? "block" : "none";
+	            });
+	        });
+	    } else {
+	        resetChannelVisibility(channelInfo, false);
+	    }
+	}
+	
+	function toggleChannelView(channelInfo){
+		const ch_view = channelInfo.querySelector(".channel-view");
+		const icon_view = channelInfo.querySelector(".ico-view");
+		
+		ch_view.classList.toggle("view");
+		
+		if(icon_view){
+			if(ch_view.classList.contains("view")) {
+				icon_view.classList.remove("ico-up-triangle");
+				icon_view.classList.add("ico-down-triangle");
+			}else{
+				icon_view.classList.add("ico-up-triangle");
+				icon_view.classList.remove("ico-down-triangle");
+			}
+		}
+	}
+	
+	
+	function viewChannelView(channelInfo){
+		const channelView = channelInfo.querySelector(".channel-view");
+		if( !channelView.classList.contains("view") ) channelView.classList.add("view");
+	}
+	
+	// 채널 가시성 리셋 함수
+	function resetChannelVisibility(channelInfo, all) {
+	    const activeServer = channelInfo.querySelector(".server-mark.active");
+	    const activeComplete = channelInfo.querySelector(".setComplete.active");
+	    
+	    
+	    if (all) toggleChannelView(channelInfo);
+	    if (activeServer && all) activeServer.classList.remove("active");
+	    if (activeComplete && all) activeComplete.classList.remove("active");
+	
+	    channelInfo.querySelectorAll(".channel-info-item").forEach(item => {
+	        item.style.display = "block";
+	
+	        // 구분선 처리
+	        const previousElement = item.previousElementSibling;
+	        if (previousElement && previousElement.classList.contains("set-divider")) {
+	            previousElement.style.display = "block";
+	        }
+	        
+	        item.querySelectorAll(".info-channel").forEach((channel) => {
+	            channel.style.removeProperty("display");
+	            channel.style.display = "block";
+	        });
+	    });
+	}
+
+	//세트 여부 확인
+	function isPartOfSet(setName, itemName) {
+	    return (
+	        (setName === "실크셋" && setDefinitions["실크셋"].includes(itemName) && itemName !== "튼튼한 꽃바구니") ||
+	        (setName === "실크셋+" && setDefinitions["실크셋"].includes(itemName)) ||
+	        (setName === "유사 방직" && setDefinitions["방직셋"].includes(itemName) && itemName !== "튼튼한 양털 주머니") ||
+	        (setName === "꽃바구니" && itemName === "튼튼한 꽃바구니") ||
+	        (setDefinitions[setName]?.includes(itemName) && setName !== "실크셋")
+	    );
+	}
+	
+	
+	// 새로운 팔레트 항목 생성 함수
+	async function createNewItem(color, itemGroup, all, location) {
+	    const newItem = document.createElement("div");
+	    const firstKey = Object.keys(itemGroup)[0];
+    	const itemData = itemGroup[firstKey]?.item_data;
+	    newItem.classList.add("item", "nomatch-addItem");
+	   
+	    // API 데이터에서 이미지 URL이 존재하는지 확인
+	    if (!itemData) {
+	        alert("API 데이터에서 유효한 이미지 URL을 찾을 수 없습니다.");
+	        console.error("Invalid API data:", itemGroup);
+	        return null; // 오류 시 null 반환
+	    }
+	    
+	    
+	    
+	    const areaCaptureElement = document.querySelector(".area-capture");	    
+	    if (!areaCaptureElement) {
+	        alert("지역 정보 요소를 찾을 수 없습니다.");
+	        console.error("No element with class 'area-capture' found.");
+	        return null; // 오류 시 null 반환
+	    }
+	    
+	    //const location_nm = locations[firstKey];	    
+	    const npc = areaCaptureElement.closest(".location-area").getAttribute("data-npc");
+	    //const tempImg = temp_ju.includes(firstKey);
+	    //const itemOpt = itemData?.item_option || [];
+	    /*
+	    qValue = tempImg
+			    ? extractColorKeyFromOptions(itemOpt)
+			    : qValue;
+	    */
+	    //let color = await decodeGivenColorQuery(qValue); // 비동기 호출
+	    //    color = formatColorValuesWithPlaceholder(color, qValue);
+	    // 색상 정보 생성			
+		const url = itemData.image_url || '';
+	    //이미지 api 호출 미사용
+   		//const mabibaseUrl = `${jumoney_url}${jumoney_key2[firstKey]}?colors=${getUrlColor(color)}" class="mabibase-img" onerror="this.src='./cute.png'` || './cute.png'; // Mabibase 이미지 URL
+	    const keys = computeSetKeys(firstKey, color);
+	    const abcKey = keys.abcKey;
+	    //<span class="icon icon-copy qCode-copy" data-qvalue="${qValue}" title="복사"></span>
+	    // data-qCode='${qValue}'
+	    let html = `		    
+		    <span class="icon icon-left icon-Image--Streamline-Phosphor captureSimpleBtn"></span>
+		    <span class="icon icon-external-link modal-open" title="모달"></span>
+		    <h3 class="location_nm${npc === "델" || npc === "델렌" ? "" : " hidden"}" data-key="${npc}">${location}</h3>
+		    <div class="img-area">
+		        <div class="loading-spinner" data-idx="${abcKey}"></div>
+		        <img src="" 
+		             alt="${firstKey}" 
+		             class="api-img hidden" 
+		             onerror="this.src='${url}'"
+		             data-mode="${keys.mode}" data-ab="${keys.abKey}" data-abc="${abcKey}"
+		             >
+		        <img src="${url}" 
+		             alt="${firstKey}" 
+		             class="api-img-org" 
+		             style="display:none"}> 
+		        <img class="mabibase-img" 
+		             data-index="${abcKey}" 
+		             item-name="${firstKey}" 
+		             onerror="this.src='./cute.png'">
+		    </div>
+		    <label class="item_nm">${firstKey}</label>
+		    ${setColorLabel(color)}
+	    `;
+	    
+		newItem.innerHTML = html;
+		
+		//채널 정보 추가		
+	    const channelInfoDiv = await createChannelInfoDiv(itemGroup, all);	    
+	    newItem.appendChild(channelInfoDiv);
+	    
+	     // 'open'과 'close' 이미지를 병렬로 생성
+	    const colors = Object.values(color).map(entry => entry.hex);
+	    const spinner = newItem.querySelector(`.loading-spinner[data-idx="${abcKey}`); // 로딩 스피너
+	    const [imgCloseUrl, imgUrl] = await Promise.all([
+	        createJumoneyImage(firstKey, colors, "close"),
+	        createJumoneyImage(firstKey, colors, "open"),
+	    ]);
+
+        // 해당 인덱스에 해당하는 이미지 태그를 업데이트
+        const imgCloseElement = newItem.querySelector(`.api-img[data-abc="${abcKey}"]`);
+        const imgElement = newItem.querySelector(`.mabibase-img[data-index="${abcKey}"][item-name="${firstKey}"]`);
+        
+        if (imgCloseElement) {
+            imgCloseElement.src = imgCloseUrl;    
+                 
+             // 이미지가 로드되면 스피너 제거
+		    imgCloseElement.onload = () => {
+		        spinner.style.display = "none"; // 스피너 숨김
+		        imgCloseElement.classList.remove("hidden"); // 이미지 표시
+		    };
+	
+		    // 이미지 로딩 실패 시 대체 이미지 사용
+		    imgCloseElement.onerror = () => {
+		        spinner.style.display = "none"; // 스피너 숨김
+		        imgCloseElement.classList.remove("hidden"); // 이미지 표시
+		    };		    
+        }
+        if (imgElement) {
+            imgElement.src = imgUrl;
+        }
+		//makeImagesLazy(newItem);
+	    return newItem;
+	}
+	
+    async function fetchNpcData(npc, server, channel, signal) {
+    	const cacheKey = `${npc}_${server}_${channel}`; // 중복 호출을 피하기 위한 캐시키 생성 //호출 횟수 아껴야함...ㅠㅠ
+        let url = `https://open.api.nexon.com/mabinogi/v1/npcshop/list?npc_name=${npc}&server_name=${server}&channel=${channel}`;
+        let curCache = dataCache[cacheKey];
+        
+        if(SHARE_KEY) url = `https://shuuryn.com/nexon_api.php?npc=${npc}&server=${server}&channel=${channel}`;
+    	//리셋 시간되면 무조건 캐시 초기화 밑 tables 초기화
+    	if(isResetNeeded()){
+			tables.innerHTML = "";
+			imageCache = new Map();
+		}
+    	// 리셋 시간이 지나지 않았고 캐시가 존재하면 재사용
+    	
+        else if ( curCache ) {
+			// 이미 진행 중인 호출인지 확인
+			if (inProgressCalls.has(cacheKey)) {
+				console.log(`이미 진행 중인 호출: ${cacheKey}`);
+				document.getElementById("curCallState").innerText = `이미 진행 중인 호출: ${cacheKey}`;
+				return; // 중복 호출 방지
+			}
+			
+	  		// 호출 진행 중임을 기록
+	 		inProgressCalls.add(cacheKey);
+			//간혹 리셋 되었는데 캐시된 데이터 사용한다는 로그가 뜨며 리스트 생성 안하는 증상 방지
+			if( curCache && curCache.length > 21) { //데이터가 없다면 다시 불러오기 //주머니 총 22개
+	            //console.log(`캐시된 데이터 사용: ${cacheKey}`);
+	            document.getElementById("curCallState").innerText = `캐시된 데이터 사용: ${cacheKey}`;
+		            
+	            completeCnt += 1;
+	            setCompleteCnt();
+	            
+	            inProgressCalls.delete(cacheKey); // 진행 중 상태 해제
+	            document.getElementById("results").innerHTML = "";
+	            return curCache;
+            }   
+        }		
+    	
+        
+        //console.log(`API 호출: ${cacheKey}`);
+        try {
+			
+			if (signal && signal.aborted) {
+		        return; // 중단 요청이 있을 경우 즉시 반환
+		    }
+	
+			// API 키가 "test"로 시작하면 호출 제한 적용
+		    if (API_KEY.startsWith("test") && !SHARE_KEY) {
+		      await throttle();
+		    }
+		    
+		    let response, data;
+			if( !SHARE_KEY ) { 
+            	response = await fetch(url, { headers: { "x-nxopen-api-key": API_KEY }} );
+            	data = await response.json();
+            }else{
+				response = await fetch(url,);
+    			data = await response.json();
+			}
+			
+			//테스트용
+			/*
+			data.shop = data.shop.filter(shop => shop.tab_name !== "주머니");
+			data.error = {name: "Hey Nexon...", message: "받은 데이터에 상품 리스트가 없습니다."};
+			console.log(data);
+			*/
+			
+            if(API_KEY && data.error) response.ok = false;
+            
+            if (!response.ok || !data.shop ) {
+				const errorName = data.error.name;
+				const errorMessage = getErrorMessage(errorName);
+				alert(errorName+"\n"+errorMessage.join("\n"));
+				
+            	console.error(errorName + ": " + data.error.message);            	
+            	
+            	document.getElementById("loading").style.display = "none";
+            	document.getElementById("results").innerHTML = errorName+"<br/>"+errorMessage[0] + "<br/>" + errorMessage[1];
+            	return data;
+            }else{	
+	        	document.getElementById("curCallState").innerText = `API 호출: ${cacheKey}`;
+				document.getElementById("results").innerHTML = "";			
+	        	// 주머니 데이터 추출 및 캐시에 저장
+	            const items = data.shop.filter(shop => shop.tab_name === "주머니").flatMap(shop => shop.item);
+	            
+	            if(items.length < 1) {
+					const errorName = "Hey Nexon...";
+					const errorMessage = getErrorMessage(errorName);
+					alert(errorName+"😑\n"+errorMessage.join("\n"));
+				
+            		console.error(errorName + ": " + errorMessage[1]);  
+					data.error = {name: errorName, message: errorMessage[1]};
+					document.getElementById("loading").style.display = "none";
+            		document.getElementById("results").innerHTML = errorMessage[0]+ "<br/>상점에 상품 리스트가 없습니다.<br/><br/>잠시 후 다시 시도해주세요";
+            		//delete data.shop;
+            		
+					return data;
+				}else{
+					dataCache[cacheKey] = items;  // 캐시에 저장	            
+		            completeCnt += 1;
+		            setCompleteCnt();
+				
+		            //리셋 시간 변경 됐을 경우만 저장
+		            if (!nextResetTime || new Date(data.date_shop_next_update) > nextResetTime ) {
+		                nextResetTime = new Date(data.date_shop_next_update);
+		                erinTimeSync = true;
+		                
+		                setTimeOffset(nextResetTime);
+		                setTime(nextResetTime);
+		                
+		                console.log(`다음 리셋 시간 갱신: ${nextResetTime}`);
+		            }
+		            
+	            	return items;
+	            }
+            }
+            
+            //checkSync(data.date_inquire); // 서버시간 동기화
+            
+        } catch (error) {
+			console.log(error);
+            console.error(`API 호출 실패: ${error.message}`);
+	        // 실패 시 상태 초기화
+	        inProgressCalls.delete(cacheKey); 
+	        dataCache[cacheKey] = null; // 캐시 무효화
+	        erinTimeSync = false;
+	        if(error.name == "OPENAPI00009") dataCache = {};
+	        hideLoadingOverlay(); // 로딩 오버레이 숨기기
+	        alert('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        }finally {
+			inProgressCalls.delete(cacheKey); // 호출 완료 후 진행 중 상태 해제
+		}
+    }
+
+	//리셋 시간 체크
+	function isResetNeeded() {
+	    const now = new Date();
+	    let result  = false;
+	    
+	    if(nextResetTime == null) result = false;
+	    else if ( now >= nextResetTime ) {
+			// 에린 시간 기준으로 '오후 11:59 이전'인 경우까지 표시 유지
+	        const erinTime = calculateErinnTime();
+			// 12시간 형식 → 24시간 형식 변환
+	        let erinHour = erinTime.hour;
+	        if (erinTime.period === "오후" && erinHour !== 12) erinHour += 12;
+	        if (erinTime.period === "오전" && erinHour === 12) erinHour = 0;
+	
+	        // 에린 시간이 23:59 이하라면 표시 유지
+	        if (erinHour > 23 && erinHour < 24) {
+	            console.log(`[유예] 에린 시간 23:59까지 표시 중`);
+	            result = false;
+	        } else {
+	            // 에린 시간이 00:00 이후라면 리셋 진행
+	            dataCache = {};
+	            erinTimeSync = false;
+	            result = true;
+	        }
+		}
+	    window.defaultImageCache = new Map();
+	  		
+	    return result;
+	}
+	
+	function setTime(nextResetTime) {
+		const resetTime = convertToKST(nextResetTime);
+		
+        document.getElementById("today").innerText = resetTime.date;
+        document.getElementById("lastCallTime").innerText = convertToKST(new Date().toISOString()).time;
+        document.getElementById("time").innerText = resetTime.time;
+	}
+	
+	
+	// 한국 시간으로 리셋 시간 표시
+	function convertToKST(isoDate) {
+	    const date = new Date(isoDate).toLocaleString('ko-KR', {
+	        timeZone: 'Asia/Seoul',
+	        year: 'numeric',
+	        month: '2-digit',
+	        day: '2-digit',
+	        hour: '2-digit',
+	        minute: '2-digit',
+	        hour12: true
+	    });
+	    
+	    // 날짜와 시간-분을 분리
+    	const parts = date.split(' ');
+	
+    	const datePart = parts.slice(0, 3).join('-').replace(/\./g, '').trim(); // "YYYY-MM-DD"
+    	const timePart = `${parts[3]} ${parts[4]}`.trim(); // "오전 05:08" 형식
+
+	    return { 
+	        date: datePart,
+	        time: timePart
+	    };
+	}
+	
+	function showLoadingOverlay() {
+	  document.getElementById("loadingOverlay").classList.remove("hidden");
+	}
+	
+	function hideLoadingOverlay() {
+	  document.getElementById("loadingOverlay").classList.add("hidden");
+	  document.getElementById("completeCnt").innerText = "";
+	  document.getElementById("curCallState").innerText = "";
+	}
+	
+	function setCompleteCnt() {
+		document.getElementById("completeCnt").innerText = "(" + completeCnt+"/"+maxCompleteCnt + ")";
+	}
+	
+	document.getElementById("loadingClose").addEventListener("click", () => { hideLoadingOverlay();});  
+	
+	const modal = document.getElementById("itemModal");
+    const modalItemName = document.getElementById("modalItemName");
+    const modalApiImage = document.getElementById("modalApiImage");
+    const modalMabibaseImage = document.getElementById("modalMabibaseImage");
+    const modalItemColors = document.getElementById("modalItemColors");
+    const rightLayout = document.getElementById("right-content");
+    const closeModalButton = document.getElementById("closeModal");
+	const imageListSample = document.querySelector('.image-list-sample');
+	    
+	function channelModal(e) {	    
+		const item = e.target.closest(".item"); // 현재 버튼이 속한 item 요소 찾기
+		//const itemColorInfo = [];		
+    
+        // 초기화: right-layout 내부의 기존 세트 및 채널 정보 제거
+		updateModalTime();
+         // 지역 이름 설정
+        const locationName = item.querySelector(".location_nm").textContent;
+        modalItemName.textContent = locationName;       
+
+        // 이미지 설정
+        const apiImageSrc = item.querySelector(".api-img").src;
+        let mabibaseImageSrc = item.querySelector(".mabibase-img").src;
+        
+	    // 이미지 설정 및 로딩 처리
+	    //setupImageWithSpinner(modalApiImage, apiImageSrc);
+	    //setupImageWithSpinner(modalMabibaseImage, mabibaseImageSrc);
+
+        modalApiImage.src = apiImageSrc;
+        modalMabibaseImage.src = mabibaseImageSrc;
+        
+        
+        // 복제된 이미지에 동일한 경로 설정
+        modalMabibaseImageCopy.src = mabibaseImageSrc;
+
+        // 색상 정보 추가
+        const colorInfo = item.querySelector(".color-info");
+        //const color_c = colorInfo.querySelector(".color_rect_p[data-key=C]").querySelector(".hex").innerText.toUpperCase();
+        //let newColor_c;
+        
+        if (colorInfo) {
+            modalItemColors.innerHTML = colorInfo.outerHTML;
+            const modalColorInfo = modalItemColors.querySelector(".filtering-color");
+            if(modalColorInfo)
+            	modalColorInfo.classList.remove("filtering-color");
+        } else {
+            console.warn("색상 정보가 없습니다.");
+        }
+     
+        // 채널 정보 추가 (append 방식)
+        const channelInfo = item.querySelector(".channel-info");        
+        let itemDataList = []; // itemDataList 초기화
+        
+        const dells = locationName.includes("광장");
+        
+        if(!dells) {
+			imageListSample.style.display = "";
+			if (channelInfo) {
+		        const channelItems = channelInfo.querySelectorAll(".channel-info-item");	        
+		
+		        itemDataList = Array.from(channelItems).map((channelItem) => {
+		            const dataItem = channelItem.getAttribute("data-item"); // data-item 값 추출
+		            const colorDataSpan = channelItem.querySelector(".color-03"); // color-03 요소 찾기
+		            const colorData = colorDataSpan
+		                ? colorDataSpan.getAttribute("color-data") // color-data 값 추출
+		                : null;
+		            
+		            const colorInfo = {};
+		            colorInfo[dataItem] = colorData;
+		            /*
+		            if( !newColor_c ){
+		            	const new_color_c = colorData.trim().split(",")[2].toUpperCase();
+		            	if(color_c != new_color_c) newColor_c = new_color_c;
+		            }
+		         	*/
+					return {dataItem, colorData}
+		        });
+		        
+		        //console.log(newColor_c);
+		        
+		        // 채널 정보 복제 및 추가
+		        const channelInfoClone = channelInfo.cloneNode(true);
+		        const channelView = channelInfoClone.querySelector(".channel-view");
+		        channelView.style.display = "block";
+		        channelInfoClone.querySelector(".ico-view").remove();
+		        rightLayout.append(channelInfoClone);
+		        addClickEventsToChannelInfo(channelInfoClone);
+		        
+		    } else {
+		        console.warn("채널 정보가 없습니다.");
+		        const noChannelMessage = document.createElement("p");
+		        noChannelMessage.style.textAlign="center";
+		        noChannelMessage.innerHTML = "<br/>채널 정보가 없습니다.";
+		        rightLayout.append(noChannelMessage);
+		    }
+	    }else{
+			imageListSample.style.display = "none";
+			const noChannelMessage = document.createElement("p");
+	        noChannelMessage.style.textAlign="center";
+	        noChannelMessage.innerHTML  = "<br>전 서버, 전 채널 동일<br/><br/>일반 꽃바구니(200개) - 35만 골드";
+	        rightLayout.append(noChannelMessage);
+		}
+	    
+	    populateImageListSample(itemDataList);
+	    // 모달 열기
+	    modal.style.display = "flex";
+	}
+	
+	const defaultImagePath = "./image/jumoney/all_base/"; // 기본 이미지 경로
+	
+	// 아이템 이미지를 생성하는 함수 (스피너 포함)
+	async function createItemImage(itemName, itemData) {
+	    //const container = document.createElement("div"); // 이미지와 스피너를 감싸는 컨테이너
+	    //container.classList.add("image-container2");
+	    const list = document.querySelector('.image-list-sample');
+  		if (!list) return null;
+	    
+		// 기본 이미지가 들어있는 컨테이너 찾기
+		const container = list.querySelector(`.image-container2 img.default_jumoney[alt="${itemName}"]`)?.closest('.image-container2');
+		if (!container) return null;
+		
+		const defaultImg = container.querySelector('img.default_jumoney');
+  		const spinner = container.querySelector('.loading-spinner');
+	    const imgElement = document.createElement("img");
+	    //const spinner = document.createElement("div"); // 로딩 스피너
+	    //spinner.classList.add("loading-spinner");
+	
+	    //container.appendChild(spinner); // 스피너 추가
+	    defaultImg.style.display="none";
+	    spinner.style.removeProperty('display');
+	    
+		// 스피너를 먼저 표시하고 이미지 생성 진행
+	    requestAnimationFrame(async () => {
+	        try {
+			    let imageUrl;
+			    const cacheKey = `${itemName}-${JSON.stringify(itemData)}`;
+			    const fallbackImage = "./cute.png"; // 실패 시 대체 이미지
+			    let createImg = false;
+			    // 아이템 정보가 있을 때: API URL 사용
+			    if (imageCache.has(cacheKey)) {
+				
+					imageUrl = imageCache.get(cacheKey);					
+					// **캐시된 이미지가 기본 이미지일 경우 클래스 추가**
+					
+		            if (imageUrl.includes(defaultImagePath)) {
+		                //imgElement.classList.add("default_jumoney");
+		                spinner.style.display="none";
+	    				defaultImg.style.removeProperty('display');
+		            }
+		            createImg = true;
+		            
+			    } else {
+				    if (itemData) {
+					
+				        const colors = itemData.colorData.split(',').map(color => color.trim());
+				        imageUrl = await createJumoneyImage(itemName, colors, "open");
+				        imageCache.set(cacheKey, imageUrl);				        
+				        //console.log(`생성된 이미지 URL: ${imageUrl}`);
+				        createImg = true;
+					    
+				    } else {
+				        // 아이템 정보가 없을 때: 기본 경로 이미지 사용
+				        //const itemKey = jumoney_key2[itemName];
+				        //imageUrl = `${defaultImagePath}${itemKey}.png`;
+				        //if (imgElement) imgElement.classList.add("default_jumoney"); // 기본 이미지에 클래스 추가
+				        spinner.style.display="none";
+	    				defaultImg.style.removeProperty('display');
+				    }
+		    	}
+		    	
+				if (createImg) {
+					container.appendChild(imgElement); // 이미지 추가
+
+					imgElement.src = imageUrl; // 이미지 로드 시작
+					imgElement.alt = itemName;
+					imgElement.classList.add("color_jumoney");
+					imgElement.classList.add("hidden"); // 로딩 중에는 숨김
+
+					// 이미지가 로드되면 스피너 제거
+					imgElement.onload = () => {
+						spinner.style.display = "none"; // 스피너 숨김
+						imgElement.classList.remove("hidden"); // 이미지 표시
+					};
+
+					// 이미지 로딩 실패 시 대체 이미지 사용
+					imgElement.onerror = () => {
+						imgElement.src = fallbackImage;
+						spinner.style.display = "none"; // 스피너 숨김
+						imgElement.classList.remove("hidden"); // 이미지 표시
+					};
+					
+					container.querySelectorAll(".color_jumoney").forEach(img => {
+					    img.addEventListener("click", function () {
+					        //if (img.classList.contains("default_jumoney")) {
+					            // default_jumoney 클래스가 있는 경우 아무 작업도 하지 않습니다.
+					            //return;
+					        //}
+					
+					        const modalMabibaseImageCopy = document.getElementById("modalMabibaseImageCopy");
+					        modalMabibaseImageCopy.src = img.src;
+					    });
+					});
+				}
+		    
+	    	}
+		    catch (error) {
+				console.error(`이미지 생성 실패: ${error.message}`);
+				container.appendChild(imgElement); // 이미지 추가
+				imgElement.src = "./cute.png";
+				spinner.style.display = "none";
+				imgElement.classList.remove("hidden");
+	        }
+    	}); //  스피너 표시를 먼저 보장
+	
+	    return container; // 부모 요소 반환 (이미지와 스피너 포함)
+	}
+	
+	// 현재 시간과 리셋 시간 업데이트 함수
+	function updateModalTime() {
+	    const now = new Date(); // 현재 시간	    
+	    const resetTime = document.getElementById('resetTime').textContent; // 리셋 시간 파싱
+	
+	    // 현재 시간 표시 (한국 시간 기준) 
+	    const { time: currentTimeFormatted, date: curDate} = convertToKST(now.toISOString());
+	    document.querySelector('#modal-realTime .set-time').textContent = currentTimeFormatted;
+	    document.getElementById('curDate').textContent = curDate;
+	
+	    // 리셋 시간 표시
+	    document.querySelector('#modal-resetTime .set-time').textContent = resetTime.split("다음 리셋:")[1].trim();
+	
+	    // 남은 시간 계산
+	    const diffMinutes = calculateTimeDifference(now, nextResetTime);
+	    document.querySelector('#modal-haveTime .set-time').textContent = `${diffMinutes}분`;
+	}
+	
+	// populateImageListSample: 세트별 아이템 이미지를 리스트에 추가
+	async function populateImageListSample(itemDataList) {
+	    //const imageListSample = document.querySelector(".image-list-sample");
+	    // setDefinitions에 정의된 각 세트를 순회하며 처리
+	    for (const [setName, items] of Object.entries(setDefinitions)) {
+	        //const setDiv = document.createElement("div");
+	        //setDiv.classList.add("set-group");
+	
+	        for (const itemName of items) {
+	            const itemData = itemDataList.find(data => data.dataItem === itemName); // 아이템 데이터 검색
+	            //const imgElement = 
+	            await createItemImage(itemName, itemData); // 이미지 생성
+	            //setDiv.appendChild(imgElement); // 세트에 이미지 추가
+	        };
+	
+	        //imageListSample.appendChild(setDiv); // 전체 리스트에 세트 추가
+	    };
+
+	}	
+	
+	// 두 시간의 차이를 분 단위로 계산하는 함수
+	function calculateTimeDifference(currentTime, resetTime) {
+	    const diff = resetTime - currentTime; // 밀리초 단위 차이
+	    return Math.max(Math.floor(diff / 1000 / 60), 0); // 분 단위로 변환 (0 이하 방지)
+	}
+	
+	
+	// 모달 초기화 함수
+	async function initializeModal() {
+	    document.querySelector('#modal-realTime .set-time').textContent = ''; // 현재 시간 초기화
+	    document.querySelector('#modal-resetTime .set-time').textContent = ''; // 리셋 시간 초기화
+	    document.querySelector('#modal-haveTime .set-time').textContent = ''; // 남은 시간 초기화
+	    document.getElementById('modalApiImage').src = ''; // 이미지 초기화
+	    document.getElementById('modalMabibaseImage').src = ''; // 이미지 초기화
+	    document.getElementById('modalMabibaseImageCopy').src = ''; // 이미지 복사본 초기화	    
+        rightLayout.innerHTML = "";
+        modalItemColors.innerHTML = "";
+        document.querySelectorAll('img.color_jumoney').forEach(n => n.remove());
+        document.querySelectorAll('img.defalut_jumoney').forEach(n => n.style.removeProperty('display'));        
+        
+        //imageListSample.innerHTML = "";
+	}
+	/*
+	document.getElementById("captureBtn").addEventListener("click", async () => {
+	    try {
+	        // 캡처할 영역 선택 (모달 본체)
+	        const captureTarget = document.querySelector(".modal-content");
+			
+	        // 레이아웃 렌더링 완료 후 캡처 실행
+	        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+	        // 숨길 요소 임시로 숨기기
+	        const elementsToHide = [
+	            document.getElementById("captureBtn"),
+	            document.getElementById("closeModal")
+	        ];
+	        
+	        elementsToHide.forEach(el => el.style.display = "none");
+	
+	        // 이미지가 로딩될 때까지 대기
+	        const images = captureTarget.querySelectorAll("img");
+	        await Promise.all(Array.from(images).map(img => ensureImageLoaded(img)));
+	        
+	        // dom-to-image-more로 캡처
+	        const dataUrl = await domtoimage.toPng(captureTarget, {
+	            quality: 1, // 최고 품질
+	            width: captureTarget.offsetWidth,
+	            height: captureTarget.scrollHeight,
+	            style: {
+	                transform: "scale1(1)", // 스케일을 2배로
+	                transformOrigin: "top left", // 변환 기준 설정
+	                backgroundColor: "#FFFFFF" // 하얀 배경 설정
+	            }
+	        });
+	
+	        // 데이터 URL을 Blob으로 변환 후 클립보드에 복사
+	        const blob = await (await fetch(dataUrl)).blob();
+	        await navigator.clipboard.write([
+	            new ClipboardItem({ "image/png": blob })
+	        ]);
+	
+	        alert("클립보드에 이미지가 복사되었습니다!");
+	
+	        // 숨겼던 요소 복원
+	        elementsToHide.forEach(el => el.style.display = "");
+	
+	    } catch (err) {
+	        console.error("캡처 실패:", err);
+	        alert("캡처에 실패했습니다.");
+	    }
+	});
+	// 이미지 로드 대기 함수
+	function ensureImageLoaded(img) {
+	    return new Promise((resolve, reject) => {
+	        if (img.complete) {
+	            resolve();
+	        } else {
+	            img.onload = resolve;
+	            img.onerror = reject;
+	        }
+	    });
+	}
+	*/
+	// 이미지 로드 대기 함수
+	async function ensureImageLoaded(img) {
+	    if (img.complete) return;
+	    return new Promise((resolve, reject) => {
+	        img.onload = resolve;
+	        img.onerror = reject;
+	    });
+	}
+	
+	// 이미지 로드 완료 대기 함수
+	function ensureImageLoaded2(img) {
+	    return new Promise((resolve) => {
+	        if (img.complete && img.naturalHeight !== 0) {
+	            resolve();
+	        } else {
+	            img.onload = () => resolve();
+	            img.onerror = () => resolve(); // 이미지 로드 실패 시에도 무조건 resolve
+	        }
+	    });
+	}
+	
+	// 캡처 로직 (모달 내용을 이미지로 캡처) //화질이 너무 꺠지는 문제가 있음
+	async function captureImage2() {
+	    const captureTarget = document.querySelector(".modal-content");
+	
+	    // 레이아웃 렌더링 완료 대기
+	    await new Promise((resolve) => requestAnimationFrame(resolve));
+	
+	    const elementsToHide = [
+	        document.getElementById("captureBtn"),
+	        document.getElementById("captureSaveBtn"),
+	        document.getElementById("closeModal")
+	    ];
+	    
+	    const modalBtns = document.getElementById("modal-btns");
+	
+	    // 숨길 요소 임시로 숨기기
+	    //elementsToHide.forEach(el => el.style.display = "none");
+	    modalBtns.style.display = "none";
+	
+	    // 이미지 로드 대기
+	    const images = captureTarget.querySelectorAll("img");
+	    await Promise.all(Array.from(images).map(img => ensureImageLoaded2(img)));
+	
+	    // html2canvas로 캡처
+	    const canvas = await html2canvas(captureTarget, {
+	        scale: 1,
+	        useCORS: true,
+	        backgroundColor: "#FFFFFF",
+	        width: captureTarget.offsetWidth,
+	        height: captureTarget.scrollHeight,
+	        ignoreElements: e => e === document.getElementById("captureBtn")
+	    });
+	
+	    // 숨긴 요소 복원
+	    //elementsToHide.forEach(el => el.style.display = "");
+	    modalBtns.style.display = "";
+	     // 캔버스를 데이터 URL로 변환
+    	const dataUrl = canvas.toDataURL("image/png", 1.0); // 품질 1.0은 최고 품질
+		return dataUrl;
+	    // 캔버스를 Blob으로 변환
+	    /*
+	    return new Promise((resolve) => {
+	        canvas.toBlob(blob => {
+	            resolve(blob);
+	        });
+	    });
+	    */
+	}
+	/*
+// 캡처한 이미지를 새로운 모달에 띄우기 (CORS 문제 해결을 위해 캔버스 사용)
+document.getElementById("capturePreviewBtn").addEventListener("click", async () => {
+    try {
+        const dataUrl = await captureImage();
+
+        // 이미지를 새로운 모달에 표시하기 위해 캔버스를 사용하여 다시 데이터 URL로 변환
+        const img = new Image();
+        img.src = dataUrl;
+
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+
+            // 캔버스에서 다시 데이터 URL 얻기
+            const newDataUrl = canvas.toDataURL("image/png");
+            openPreviewModal(newDataUrl);
+        };
+    } catch (err) {
+        console.error("이미지 미리보기 실패:", err);
+        alert("이미지 미리보기에 실패했습니다.");
+    }
+});
+
+// 미리보기 모달을 여는 함수
+function openPreviewModal(dataUrl) {
+    // 미리보기 모달 요소 가져오기 (모달을 이미 정의해두었다고 가정)
+    const previewModal = document.getElementById("previewModal");
+    const modalImage = document.getElementById("previewModalImage");
+
+    // 이미지 요소에 캡처한 이미지 설정
+    modalImage.src = dataUrl;
+
+    // 모달 열기
+    previewModal.style.display = "block";
+}
+*/
+/*
+// 캡처한 이미지를 새로운 모달에 띄우기
+document.getElementById("capturePreviewBtn").addEventListener("click", async () => {
+    try {
+        const dataUrl = await captureImage();
+
+        // 새로운 모달 창에 이미지를 띄우기
+        openPreviewModal(dataUrl);
+    } catch (err) {
+        console.error("이미지 미리보기 실패:", err);
+        alert("이미지 미리보기에 실패했습니다.");
+    }
+});
+// 미리보기 모달을 여는 함수
+function openPreviewModal(dataUrl) {
+    // 미리보기 모달 요소 가져오기 (모달을 이미 정의해두었다고 가정)
+    const previewModal = document.getElementById("previewModal");
+    const modalImage = document.getElementById("previewModalImage");
+
+    // 이미지 요소에 캡처한 이미지 설정
+    modalImage.src = dataUrl;
+
+    // 모달 열기
+    previewModal.style.display = "block";
+}
+
+// 모달 닫기 버튼 이벤트
+document.getElementById("closePreviewModal").addEventListener("click", () => {
+    const previewModal = document.getElementById("previewModal");
+    previewModal.style.display = "none";
+});
+
+// 모달 닫기 버튼 이벤트
+document.getElementById("closePreviewModal").addEventListener("click", () => {
+    const previewModal = document.getElementById("previewModal");
+    previewModal.style.display = "none";
+});
+
+*/	
+	// 캡처 로직 (모달 내용을 이미지로 캡처)
+	async function captureImage() {
+	    const captureTarget = document.querySelector(".modal-content");
+	
+	    // 레이아웃 렌더링 완료 대기
+	    await new Promise((resolve) => requestAnimationFrame(resolve));
+	
+	    const elementsToHide = [
+	        document.getElementById("captureBtn"),
+	        document.getElementById("captureSaveBtn"),
+	        document.getElementById("closeModal")
+	        
+	    ];
+		const modalBtns = document.getElementById("modal-btns");
+	    // 숨길 요소 임시로 숨기기
+	    elementsToHide.forEach(el => el.style.display = "none");
+	    //modalBtns.style.display = "none";
+	    
+	    // 캡처 전 대상의 높이 확장
+	    const originalHeight = captureTarget.style.maxHeight ; // 원래 높이를 저장
+	    captureTarget.style.maxHeight = `${captureTarget.scrollHeight}px`; // 스크롤 높이로 설정
+	    captureTarget.style.overflowY = 'hidden'; // 스크롤을 숨김
+	
+	    // 이미지 로드 대기
+	    const images = captureTarget.querySelectorAll("img");
+	    await Promise.all(Array.from(images).map(img => ensureImageLoaded(img)));
+	
+	    // dom-to-image-more로 캡처
+	    const dataUrl = await domtoimage.toPng(captureTarget, {
+	        quality: 1,
+	        width: captureTarget.offsetWidth,
+	        height: captureTarget.scrollHeight,
+	        style: {
+	            transform: "scale(1)",
+	            transformOrigin: "top left",
+	            backgroundColor: "#FFFFFF"
+	        },
+	        useCORS: true // CORS 문제 해결 옵션 추가
+	    });
+	
+	    // 숨긴 요소 복원
+	    // 캡처 후 원래 높이 및 스타일 복원
+   		captureTarget.style.maxHeight = "calc(100vh - 70px)";
+   		captureTarget.style.overflowY = "auto";
+   		//modalBtns.style.display = "";
+	    elementsToHide.forEach(el => el.style.display = "");
+	
+	    return dataUrl;
+	}
+	
+	function captureSimple(e){
+		const elem = e.target;
+		// 클립보드에 이미지 복사
+		elem.addEventListener("click", async () => {
+			   let dataUrl = "";
+		    try {
+		        dataUrl = await captureSimpleImage(elem.parentElement);
+		        const blob = await (await fetch(dataUrl)).blob();
+				//displayImageInModal(dataUrl);
+		        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+	        	iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+		    } catch (err) {
+		        console.error("클립보드 복사 실패:", err);
+				//iziToast.error({title: '복사에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1500,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+				displayImageInModal(dataUrl);
+		        //alert("복사에 실패했습니다.");	        
+		    }
+		});
+	
+	}
+	
+	async function captureSimpleImage(elem) {
+	    const captureTarget = elem;
+	
+	    // 레이아웃 렌더링 완료 대기
+	    await new Promise((resolve) => requestAnimationFrame(resolve));
+	
+	    // 캡처 전 대상의 높이 확장
+	    captureTarget.style.maxHeight = `${captureTarget.scrollHeight}px`; // 스크롤 높이로 설정
+	    captureTarget.style.overflowY = 'hidden'; // 스크롤을 숨김
+	
+	    // 이미지 로드 대기
+	    const images = captureTarget.querySelectorAll("img");
+	    await Promise.all(Array.from(images).map(img => ensureImageLoaded(img)));
+	
+	    // dom-to-image-more로 캡처
+	    const dataUrl = await domtoimage.toPng(captureTarget, {
+	        quality: 1,
+	        width: captureTarget.offsetWidth,
+	        height: captureTarget.scrollHeight,
+	        style: {
+	            transform: "scale(1)",
+	            transformOrigin: "top left",
+	            backgroundColor: "#FFFFFF"
+	        },
+	        useCORS: true // CORS 문제 해결 옵션 추가
+	    });
+	
+	    // 숨긴 요소 복원
+	    // 캡처 후 원래 높이 및 스타일 복원
+   		captureTarget.style.maxHeight = "calc(100vh - 70px)";
+   		captureTarget.style.overflowY = "auto";
+	
+	    return dataUrl;
+	}
+	
+	// 클립보드에 이미지 복사
+	document.getElementById("captureBtn").addEventListener("click", async () => {
+		   let dataUrl = "";
+	    try {
+	        dataUrl = await captureImage();
+	        const blob = await (await fetch(dataUrl)).blob();
+			//displayImageInModal(dataUrl);
+	        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        	iziToast.success({title: '클립보드에 이미지가 복사되었습니다', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+	    } catch (err) {
+	        console.error("클립보드 복사 실패:", err);
+			//iziToast.error({title: '복사에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1500,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+			displayImageInModal(dataUrl);
+	        //alert("복사에 실패했습니다.");	        
+	    }
+	});
+	
+	
+	// 이미지 파일로 저장 (iOS/Safari 호환)
+	document.getElementById("captureSaveBtn").addEventListener("click", async () => {
+	    try {
+	        const dataUrl = await captureImage();
+	        const fileName = generateFileName();
+	        saveImage(dataUrl, fileName);	        
+	    } catch (err) {
+	        console.error("이미지 저장 실패:", err);
+	        iziToast.error({title: '저장에 실패했습니다.', message: '',drag: true,position: 'topCenter', targetFirst: true,timeout: 1000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+	    }
+	});
+	
+	// 이미지 저장 함수
+	function saveImage(dataUrl, fileName) {
+	    const link = document.createElement("a");
+	    link.href = dataUrl;
+	    link.download = fileName;
+	
+	    // iOS/Safari 감지 및 처리
+	    /*
+	    if (isIOS()) {
+	        alert("이미지를 길게 눌러 저장하세요.");
+	        window.open(dataUrl, "_blank");
+	    } else {
+		*/		
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);	        
+	    //}
+	    
+	}
+	function isIPhone() {
+		return /iPhone/i.test(navigator.userAgent);
+	}
+	// iOS 또는 Safari 감지 함수
+	function isIOS() {
+	    return /iP(hone|ad|od)/i.test(navigator.userAgent) ||
+	           (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+	}
+	
+	// 모달에 이미지 표시 함수
+	function displayImageInModal(dataUrl) {
+	    const imgElement = document.getElementById("previewModalImage"); // 모달 내 이미지 요소 ID를 사용
+	    imgElement.src = dataUrl;
+	    
+	    const modal = document.getElementById("previewModal"); // previewModal ID를 사용해 모달 요소 가져오기
+	    modal.style.display = "flex"; // 모달을 열기 위해 display 스타일 변경
+	
+	    // 모달 외부 클릭 시 닫기
+		modal.addEventListener("click", (event) => {
+			if (event.target === modal) {
+				closeModal();
+			}
+		});		
+	    
+	    iziToast.error({title: '실패', message: '새로 열린 모달창의 이미지를 우클릭 또는 길게 눌러 복사/저장할 수 있습니다.',drag: true,position: 'topCenter', targetFirst: true,timeout: 10000,progressBar: true,progressBarColor: '',progressBarEasing: 'linear',close: true, });
+	}
+	
+	// 모달 닫기 함수
+	function closeModal() {
+	    const modal = document.getElementById("previewModal");
+	    const imgElement = document.getElementById("previewModalImage"); // 모달 내 이미지 요소 ID를 사용
+	    imgElement.removeAttribute("src");
+	    modal.style.display = "none";
+	}
+	
+	// 모달 내 닫기 버튼에 이벤트 추가
+	document.getElementById("closePreviewModal").addEventListener("click", closeModal); // 모달 닫기 버튼의 ID가 closeModalBtn이라고 가정
+	
+	// 날짜 및 시간 형식 포맷 함수
+	function getCurrentFormattedTime() {
+	    const now = new Date();
+	    const yy = String(now.getFullYear()).slice(-2);
+	    const mm = String(now.getMonth() + 1).padStart(2, '0'); // 월 (01-12)
+	    const dd = String(now.getDate()).padStart(2, '0');      // 일 (01-31)
+	    const hh = String(now.getHours()).padStart(2, '0');     // 시 (00-23)
+	    const min = String(now.getMinutes()).padStart(2, '0');  // 분 (00-59)
+	
+	    return `${yy}${mm}${dd}-${hh}${min}`;
+	}
+	
+	// 여러 hex 값 가져와 결합하는 함수
+	function getHexValues() {
+	     const hexLabels = document.querySelectorAll("#modalItemColors .color-info label.hex" );
+	    const hexValues = Array.from(hexLabels).map(label => label.innerText.trim().replace("#", ""));
+	    return hexValues.join("N"); // N으로 결합
+	}
+	
+	// 파일명 생성 함수
+	function generateFileName() {
+	    // modalItemName 텍스트 가져오기
+	    const itemName = document.getElementById("modalItemName").innerText.trim();
+	
+	    // hex 값 결합
+	    const hexValues = getHexValues();
+	
+	    // 현재 시간 가져오기
+	    const currentTime = getCurrentFormattedTime();
+	
+	    // 파일명 조합
+	    return `${itemName}-${currentTime}-${hexValues}.png`;
+	}
+	
+	async function singleChanneling(e) {
+		e.preventDefault();
+		const elem = e.currentTarget;
+		const item = elem.closest(".item");  // 해당 img-area가 속한 .item 요소 찾기
+		const item_name = item.querySelector(".item_nm").innerText;
+		Swal.fire({
+		  title: `${item_name} 기준으로 검색합니다.`,
+		  showDenyButton: true,
+		  showCancelButton: true,
+		  confirmButtonText: "현재 서버",
+		  denyButtonText: `전체 서버`
+		}).then(async  (result) => {
+			if( !result.isDismissed ){
+				
+		        const img = elem.querySelector(".api-img");
+		        //const qCode = img.getAttribute("data-qcode"); // 아이템 코드 가져오기
+		        const abKey = img.getAttribute("data-ab");	
+		        /*
+		        let qCode;	
+			    if (isHerbPouch(item_name)) {
+			        // 허브: 옵션 → 배열로
+			        qCode = img.getAttribute("data-qcode");			        
+			    } else {
+			        // 비허브: 기존 경로 + 배열 보정만 추가
+			        qCode = img.getAttribute("data-qcode");
+			        let raw = await decodeGivenColorQuery(qCode); // 기존 로직
+			        raw = ensureRGBArrays(raw);                   // ★ 배열 보정
+			    }
+			    */
+		        const location = item.querySelector(".location_nm");
+		        const npc = location.getAttribute("data-key");  // 선택한 서버 가져오기
+		        let all = false;
+		        let dells = false;
+		        
+		        if ( !result.isConfirmed ) all = true;
+		        
+				try {
+			        // 로딩 오버레이 표시
+			        showLoadingOverlay();
+			        // API로 데이터 가져오기
+			        const data = await getAllServersForItem(npc, abKey, all);	//qCode
+			        if (!data) return;
+			        
+			        // 초기화: right-layout 내부의 기존 세트 및 채널 정보 제거
+					updateModalTime();
+					
+			        // 지역 이름 설정
+			        const locationName = location.textContent;
+			        modalItemName.textContent = locationName;
+			        
+			        //델/델렌
+					dells = locationName.includes("광장");
+			        // 이미지 설정
+			        const apiImageSrc = item.querySelector(".api-img").src;
+			        let mabibaseImageSrc = item.querySelector(".mabibase-img").src;
+			       
+			        modalApiImage.src = apiImageSrc;
+			        modalMabibaseImage.src = mabibaseImageSrc;	        
+			        
+			        // 복제된 이미지에 동일한 경로 설정
+			        modalMabibaseImageCopy.src = mabibaseImageSrc;
+			
+			        // 색상 정보 추가
+			        const colorInfo = item.querySelector(".color-info");
+			        if (colorInfo) {
+			            modalItemColors.innerHTML = colorInfo.outerHTML;
+			            const modalColorInfo = modalItemColors.querySelector(".filtering-color");
+			            if(modalColorInfo)
+			            	modalColorInfo.classList.remove("filtering-color");
+			        } else {
+			            console.warn("색상 정보가 없습니다.");
+			        }
+			        // 모달에 데이터 표시
+			        showChannelingModal(data, location.innerText, all, dells);
+			    } catch (error) {
+			        console.error("채널링 중 에러 발생:", error);
+			        initializeModal();
+			    } finally {
+			        // 로딩 오버레이 숨김
+			        hideLoadingOverlay();
+			    }
+		    }
+	    });
+	}
+	
+	async function getAllServersForItem(npc, itemKey, all) {
+		if(isResetNeeded()){
+			Swal.fire({
+			  icon: "error",
+			  title: "실패",
+			  html: "리셋 시간이 지나 불러올 수 없습니다.<br/>팔레트를 다시 조회 후 시도해주세요."
+			});
+			
+			return false;
+		}
+		
+		// ✅ 허브 여부에 따라 itemKey 처리
+	    /*
+	    let itemKey;
+	    if (isHerbPouch(qCode)) {
+	        // 허브는 그대로 사용
+	        itemKey = qCode;
+	    } else {
+	        // 비허브는 마커 제거
+	        itemKey = removeBetweenMarkers(qCode);
+	    }
+	    */
+	    //const itemKey = removeBetweenMarkers(qCode); // 클릭된 이미지 URL에서 key 값 추출
+	    let servers = [document.getElementById("server").value];
+	    let dellsCnt = false;
+	    
+	    if (!itemKey) {
+	        console.error("아이템 qCode를 추출할 수 없습니다.");
+	        return {};
+	    }
+	    
+		if (all) {
+	        servers = Object.keys(server_ch); // 모든 서버 목록 가져오기
+	        maxCompleteCnt = allServerChannelCount();
+	    } else {
+	        maxCompleteCnt = server_ch[servers[0]] - 1;
+	    }
+	    
+	    const groupedItems = {}; // 서버와 채널 정보를 그룹화할 객체
+	    // 모든 서버와 채널에 대해 fetchNpcData 호출
+	    completeCnt = 0;
+	    outerLoop:  // 레이블을 사용하여 외부 반복문까지 탈출할 수 있게 설정
+	    for (const server of servers) {
+			if( (npc == "델" || npc == "델렌") && dellsCnt ) break;
+	        const maxCh = server_ch[server]; // 해당 서버의 최대 채널 수
+	
+	        for (let ch = 1; ch <= maxCh; ch++) {
+	            if (ch === 11) continue; // 11채널 제외
+	
+	            const data = await fetchNpcData(npc, server, ch); // CPN과 서버, 채널로 API 호출	    
+	            if( (npc == "델" || npc == "델렌") && dellsCnt ) break;
+	       		if(npc == "델" || npc == "델렌") dellsCnt = true;
+	            
+	            if (data.error) {
+	                console.error(`Error fetching data for ${server} - ${ch}: ${data.error}`);
+	                break outerLoop;
+	            }
+	
+	            // 아이템의 이미지 URL에서 key 값을 추출하여 매칭
+	            data.forEach(item => {
+
+					const item_nm = item.item_display_name;
+
+					let rawColors;
+					if (isHerbPouch(item_nm)) {
+						const raw = parseColorsFromOptionsToArrays(item.item_option);
+						rawColors = formatColorValuesWithPlaceholder(raw);
+					} else {
+						//const q = extractQValue(item.image_url);
+						const q = getQcode(item.image_url);
+						const raw = decodeGivenColorQuery(q);
+						//rawColors = ensureRGBArrays(raw);
+						rawColors = formatColorValuesWithPlaceholder(raw);
+					}
+					
+					const keys = computeSetKeys(item_nm, rawColors);
+                    const abKey = keys.abKey;
+					
+	               // const itemQValue = extractQValue(item.image_url); // API 데이터의 이미지 URL에서 key 추출
+					/*
+					 const itemQValue = isHerbPouch(item.item_display_name)
+						 ? extractColorKeyFromOptions(item.item_option)    // 허브 주머니: 파트 A/B/C RGB로 그룹화
+						 : extractQValue(item.image_url);                  // 그 외: 기존 q값으로 그룹화
+					 */
+	                if (abKey !== itemKey) return; // key 값이 일치하지 않으면 건너뜀
+				
+	                // 그룹화하여 저장
+	                if (!groupedItems[abKey]) groupedItems[abKey] = {};
+	
+	                if (!groupedItems[abKey][item.item_display_name]) {
+	                    groupedItems[abKey][item.item_display_name] = {
+	                        servers: {},
+	                        item_data: item,
+	                    };
+	                }
+	
+	                if (!groupedItems[abKey][item.item_display_name].servers[server]) {
+	                    groupedItems[abKey][item.item_display_name].servers[server] = [];
+	                }
+	
+	                // 채널 추가
+	                if (!groupedItems[abKey][item.item_display_name].servers[server].includes(ch)) {
+	                    groupedItems[abKey][item.item_display_name].servers[server].push(ch);
+	                }
+	            });
+	        }
+	    }
+	    return groupedItems; // 모든 서버와 채널에 대한 데이터를 반환
+	}
+
+	function showChannelingModal(data, itemName, all, dells) {
+	    // 기존 내용 초기화
+	    //channelInfoDiv.innerHTML = "";
+	
+	    // 모달의 제목에 아이템 이름 설정
+	    document.getElementById("modalItemName").innerText = itemName;
+	
+	    // 채널 정보가 없을 때 처리
+	    if(!dells){
+			document.querySelector(".image-list-sample").style.display = "";
+		    if (data.length === 0) {
+		        document.getElementById("right-content").innerHTML = "<p style='text-align: center'>해당 아이템의 채널 정보를 찾을 수 없습니다.</p>";
+		    } else {
+				const sortedItems = sortGroupedItems(data);		
+		        const matchedItemGroup = sortedItems[Object.keys(sortedItems)[0]];		        
+	
+		 		createChannelInfoDiv(matchedItemGroup, all, true)
+	             .then(({ div: channelInfoDiv, data: itemDataList }) => {
+		  			channelInfoDiv.querySelector(".ico-view").remove();
+		  			channelInfoDiv.querySelector(".channel-view").style.display = "block";
+		  			//channelInfoDiv.querySelector(".channel-view").classList.remove("channel-view");
+			        rightLayout.appendChild(channelInfoDiv); // 채널 정보 추가		        
+			        
+			        // 추가 작업이 필요하다면 여기서 itemDataList를 활용
+			        populateImageListSample(itemDataList); 
+			    })
+			    .catch((error) => {
+			        console.error("채널 정보를 생성하는 도중 오류가 발생했습니다:", error);
+			    });
+	
+		    }
+	    }else{
+			document.querySelector(".image-list-sample").style.display = "none";
+			document.getElementById("right-content").innerHTML = "<p style='text-align: center'><br/>전 서버, 전 채널 동일<br/><br/>일반 꽃바구니(200개) - 35만 골드</p>";
+		}
+		
+	    // 모달 표시
+	    modal.style.display = "flex";
+	}
+
+	// 모달 닫기 이벤트
+	document.getElementById("closeModal").addEventListener("click", () => {
+	    document.getElementById("itemModal").style.display = "none";
+	    initializeModal();
+	});
+
+	
+    closeModalButton.addEventListener("click", function () {
+        modal.style.display = "none";
+		initializeModal();
+    });
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+			initializeModal()
+            modal.style.display = "none";
+        }
+    });
+	 
+	document.getElementById("checkSet").addEventListener("click", () => { checkSetAllServers(false);});
+	document.getElementById("checkAllServers").addEventListener("click", () => { checkSetAllServers(true);});
+	
+	document.getElementById("addSimpleFilter").addEventListener("click", () => { addSimpleFilterItem();});
+	document.getElementById("addDetailFilter").addEventListener("click", () => { addDetailFilterItem();});
+	document.getElementById("filterHide").addEventListener("click", (e) => { filterHideShow(e.currentTarget);});
+
+	document.getElementById('applyColorFilter').addEventListener('click', () => {
+		const locationAreas = [...document.querySelectorAll('.location-area')]; // 모든 지역
+		
+		if(locationAreas.length < 1) {
+	        iziToast.error({ id: 'filter-error', title: '주머니 리스트가 존재하지 않습니다.', message: '', drag: true, position: 'topCenter', timeout: 3000, progressBar: true, progressBarEasing: 'linear', close: true, });
+	        return;
+	    }
+		
+		const filterInputs = document.querySelectorAll('.filter-set-index');		
+		const filterGroups = [...document.querySelectorAll('.colorFilter')]; // 모든 필터 그룹
+
+    	let hasEmpty = false;
+    	filterInputs.forEach((input) => {
+	        if (input.value.trim() === '') {
+	            hasEmpty = true;
+	            input.focus();
+	        }
+	    });
+	    
+	    if (hasEmpty) {
+	        iziToast.error({ id: 'filter-error', title: '순서에 값을 입력해주세요.', message: '', drag: true, position: 'topCenter', timeout: 3000, progressBar: true, progressBarEasing: 'linear', close: true, });
+	        return;
+	    }
+	    
+		if (itemCall) {
+			iziToast.error({ id: 'filter-error', title: '주머니 리스트를 불러오는 중입니다. 생성 완료 후 다시 시도 합니다.', message: '', drag: true, position: 'topCenter', timeout: 3000, progressBar: true, progressBarEasing: 'linear', close: true, });
+			waitFiltering = true;
+			return;
+		}
+		waitFiltering = false;
+
+		if (locationAreas.lenght < 1) return;
+
+		// 세트별로 그룹화
+		const groupBySet = (groups) => {
+			const sets = {};
+			groups.forEach((group) => {
+				const setInput = group.querySelector('.filter-set');
+				const setNumber = setInput?.value.trim();
+
+				if (!sets[setNumber]) sets[setNumber] = [];
+				sets[setNumber].push(group);
+			});
+			return sets;
+		};
+
+		const sets = groupBySet(filterGroups); // 모든 그룹 세트별로 그룹화
+
+		// 세트 내 순서 정렬 및 중복 처리
+		Object.keys(sets).forEach((setNumber) => {
+			const groups = sets[setNumber];
+			const usedIndexes = new Set(); // 이미 사용된 순서 번호 저장
+			let nextAvailableIndex = 1; // 중복 시 새로운 순서 번호
+
+			// 정렬
+			groups.sort((a, b) => {
+				const indexA = parseInt(a.querySelector('.filter-set-index')?.value || 0, 10);
+				const indexB = parseInt(b.querySelector('.filter-set-index')?.value || 0, 10);
+
+				// 중복 순서는 태그 순서로 정렬
+				if (indexA === indexB) {
+					return filterGroups.indexOf(a) - filterGroups.indexOf(b);
+				}
+				return indexA - indexB;
+			});
+			
+			// 첫 번째 순서가 1보다 큰 경우 1로 변경
+		    if (groups.length > 0) {
+		        const firstOrderInput = groups[0].querySelector('.filter-set-index');
+		        const firstOrderValue = parseInt(firstOrderInput?.value.trim() || 0, 10);
+		        
+		        if (firstOrderValue > 1) {
+		            firstOrderInput.value = 1; // 첫 번째 순서를 1로 설정
+		            usedIndexes.add(0); // 1을 사용된 번호로 추가
+		        }
+		    }
+
+			// 중복 순서 처리
+			groups.forEach((group) => {
+				const orderInput = group.querySelector('.filter-set-index');
+				let orderValue = parseInt(orderInput?.value.trim() || 0, 10);
+				
+				if (usedIndexes.has(orderValue)) {
+					// 중복된 경우 새로운 순서 번호 할당
+					while (usedIndexes.has(nextAvailableIndex)) {
+						nextAvailableIndex++;
+					}
+					orderValue = nextAvailableIndex;
+					orderInput.value = orderValue; // HTML에 업데이트
+				}
+
+				usedIndexes.add(orderValue); // 사용된 순서 번호 추가
+			});
+
+			// 정렬된 결과를 DOM에 반영
+			const simpleContainer = document.getElementById('filter-color');
+			const detailContainer = document.getElementById('filter-color-detail');
+
+			groups.forEach((group) => {
+				if (group.classList.contains('detail')) {
+					detailContainer.appendChild(group); // detail은 detail-container로
+				} else {
+					simpleContainer.appendChild(group); // simple은 simple-container로
+				}
+			});
+			updateSetLogicalStates();
+		});
+
+
+		document.getElementById('tables').classList.add("filtering");
+
+		locationAreas.forEach(area => {
+			const items = [...area.querySelectorAll('.item')]; // 지역 내 모든 아이템
+			let visibleItems = 0; // 표시되는 아이템 개수
+
+			// 1. **필터링 초기화**: 모든 `item` 초기 상태로 리셋
+			items.forEach(item => {
+				item.style.display = 'block'; // 기본값으로 초기화
+				const colors = item.querySelectorAll('.color_rect_p');
+				colors.forEach(color => {
+					const colorClass = color.classList;
+					if (colorClass.contains('filtering-color')) colorClass.remove('filtering-color');
+				});
+			});
+
+			items.forEach(item => {
+				const colorInfo = [...item.querySelectorAll('.color-info .color_rect_p')]; // 아이템의 색상 정보
+				const itemName = item.querySelector('.item_nm')?.textContent.trim(); // 아이템 이름
+				const filterNameToggle = item.querySelector('.filter-name-toggle');
+				const filterNameLabel = item.querySelector('.filter-name');
+
+				if (colorInfo.length === 0) {
+					item.style.display = 'none'; // 색상 정보가 없으면 숨김
+					if (filterNameToggle) filterNameToggle.value = ''; // 필터가 적용되지 않음
+					return;
+				}
+
+				let matches = false; // 세트 간 논리: OR 기본값
+				const matchingFilters = new Set(); // 일치하는 필터 이름 저장
+				let index = 0;
+
+				let matchesPerSet = []; // 각 세트별로 매칭 여부 저장
+
+				// 각 세트를 순회
+				Object.values(sets).forEach(groups => {
+					let setMatch = false; // 세트의 기본값: 첫 번째 조건으로 초기화        
+					let firstCondition = true; // 첫 조건 여부 확인
+					let setNumber = Object.keys(sets)[index];
+					const setMatches = new Map(); // 각 색상별 매칭 여부 저장
+					index++;
+					
+						
+					groups.forEach((group, index) => {
+						const switchElement = group.querySelector('.switch'); // 스위치
+						if (!switchElement || !switchElement.checked) return; // 스위치 꺼진 조건은 무시
+
+						const filterType = group.querySelector('.filter-type')?.value?.trim() || '전체'; // 전체(빈 값) 또는 특정
+						const inputColor = group.querySelector('.set-color')?.value.trim(); // 색상 입력값
+						const errorRange = parseInt(group.querySelector('.set-plus-minus')?.value, 10) || 0; // 오차값
+						const errorMethod = group.querySelector('.set-method')?.value; // ±/+/- 방식
+						const logicalOp = group.querySelector('.set-logical')?.value.toLowerCase() || 'and'; // 논리 연산자
+						const isDetail = group.classList.contains('detail'); // 상세 조건 여부
+						const filterName = group.querySelector('.filter-name')?.value.trim(); // 필터 이름
+						const errorRangeType = group.querySelector('.error-range-type')?.value || "";
+						const setIndex = group.querySelector('.filter-set-index')?.value || "";
+						let idx = 0;
+
+						let colorMatchs = [];
+						let matchOnce = false;
+
+						if (!inputColor && !isDetail) return; // 유효하지 않은 입력값 무시
+
+						colorInfo.forEach(info => {
+							const colorKey = info.dataset.key; // `data-key` 값
+							const colorRGB = info.querySelector('.rgb')?.textContent.trim().split(' ').map(Number) || []; // RGB 값
+
+							let conditionMatch = false; // 조건 초기값
+							
+							if (!isDetail) {
+								// !isDetail: 일반 색상 비교
+								let inputRGB = null;
+
+								// HEX 입력값을 RGB로 변환
+								if (inputColor?.startsWith('#')) {
+									inputRGB = hexToRGB(inputColor);
+								} else {
+									inputRGB = parseRGB(inputColor); // RGB 입력값 처리
+								}
+								if (!inputRGB) return; // 유효하지 않은 입력값 무시
+								switch (filterType) {
+									case '전체':
+										if (compareRGB(colorRGB, inputRGB, errorMethod, errorRange, errorRangeType)) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color'); // 조건에 맞는 색상에 클래스 추가
+										}
+										break;
+									case 'A':
+									case 'B':
+									case 'C':
+										if (colorKey === filterType && compareRGB(colorRGB, inputRGB, errorMethod, errorRange, errorRangeType)) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color'); // 조건에 맞는 색상에 클래스 추가
+										}
+										break;
+									case 'C+':
+										if (colorKey === 'C' && isInSet(itemName, ['작물셋', '방직셋']) && compareRGB(colorRGB, inputRGB, errorMethod, errorRange, errorRangeType)) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color'); // 조건에 맞는 색상에 클래스 추가
+										}
+										break;
+									case 'R':
+										if (colorKey === 'C' && isInSet(itemName, ['가죽셋', '옷감셋', '실크셋']) && compareRGB(colorRGB, inputRGB, errorMethod, errorRange, errorRangeType)) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color'); // 조건에 맞는 색상에 클래스 추가
+										}
+										break;
+									default:
+										break;
+								}
+							} else {
+								// 범위 값 유효성 검사: getRange 호출 전
+								const rStart = group.querySelector('.color-r input.color-start')?.value.trim();
+								const rEnd = group.querySelector('.color-r input.color-end')?.value.trim();
+								const gStart = group.querySelector('.color-g input.color-start')?.value.trim();
+								const gEnd = group.querySelector('.color-g input.color-end')?.value.trim();
+								const bStart = group.querySelector('.color-b input.color-start')?.value.trim();
+								const bEnd = group.querySelector('.color-b input.color-end')?.value.trim();
+
+								// 값 중 하나라도 빈 값이면 조건 건너뛰기
+								if (!rStart || !rEnd || !gStart || !gEnd || !bStart || !bEnd) {
+									return;
+								}
+								// isDetail: 상세 조건 처리
+								const rRange = getRange(group, 'r');
+								const gRange = getRange(group, 'g');
+								const bRange = getRange(group, 'b');
+
+								if (!rRange || !gRange || !bRange) return; // 유효하지 않은 범위는 무시
+
+								const isInRange = compareRGBRanges(colorRGB, rRange, gRange, bRange);
+
+								switch (filterType) {
+									case '전체':
+										if (isInRange) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color'); // 조건에 맞는 색상에 클래스 추가
+										}
+										break;
+									case 'A':
+									case 'B':
+									case 'C':
+										if (colorKey === filterType && isInRange) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color'); // 조건에 맞는 색상에 클래스 추가
+										}
+										break;
+									case 'C+':
+										if (colorKey === 'C' && isInSet(itemName, ['작물셋', '방직셋']) && isInRange) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color');
+										}
+										break;
+									case 'R':
+										if (colorKey === 'C' && isInSet(itemName, ['가죽셋', '옷감셋', '실크셋']) && isInRange) {
+											conditionMatch = true;
+											//info.classList.add('filtering-color');
+										}
+										break;
+									default:
+										break;
+								}
+							}
+							
+							if(conditionMatch) matchOnce = conditionMatch;
+							// 컬러별 conditionMatch와 filterName 저장
+							if (!colorMatchs[idx] ) {
+								colorMatchs[idx] = { info: info, matched: conditionMatch, filterName: filterName };
+							}
+							idx++;
+							//console.log(`filterName: ${filterName}, conditionMatch: ${conditionMatch}, inputColor: ${inputColor}, color: ${colorRGB}, name: ${itemName}`)
+						});						
+						// 세트 내부 첫 번째 조건: 논리 연산 생략
+						if (firstCondition) {
+							setMatch = matchOnce;
+							firstCondition = false; // 첫 조건 처리 이후 다음 조건부터 논리 연산 적용
+						} else {
+							// 이후 조건부터 논리 연산 적용
+							if (logicalOp === 'and') {
+								setMatch = setMatch && matchOnce;
+							} else {
+								setMatch = setMatch || matchOnce;
+							}							
+						}
+						//console.log(`setMatch: ${setMatch}, logicalOp: ${logicalOp}`);
+						//console.log(colorMatchs);
+						setMatches.set(setIndex, {setMatch: setMatch , data: colorMatchs});
+						
+					});
+					
+					let setMatchInfo = [];
+					setMatches.forEach(matchInfo => {
+						
+						const data = matchInfo.data;	
+						if(matchInfo.setMatch) {
+							data.forEach(idx => {
+								if(idx.matched) setMatchInfo.push(data);
+							});
+						}else{
+							setMatchInfo = [];
+							return;
+						}
+					});
+					
+					if(setMatchInfo.length > 0){
+						setMatchInfo.forEach(matchInfo => {
+							matchInfo.forEach(matched => {
+								if(matched.matched){
+									matched.info.classList.add("filtering-color");
+									matchingFilters.add(matched.filterName);
+								}
+							});
+						});
+					}
+					
+					matchesPerSet.push(setMatch);
+					setNumber++;
+				});
+
+				// 일치 여부에 따라 아이템 표시/숨김
+				const allSetsMatch = matchesPerSet.some(match => match); // 
+				if (allSetsMatch) { //if (matches)
+
+					if (filterNameToggle) filterNameToggle.value = 'show'; // 필터가 적용되었음을 표시
+					if (filterNameLabel) filterNameLabel.textContent = Array.from(matchingFilters).join(', '); // 일치하는 필터 이름 표시
+
+					item.style.display = 'block';
+					visibleItems++;
+				} else {
+					item.style.display = 'none';
+
+					if (filterNameToggle) filterNameToggle.value = ''; // 필터가 적용되지 않음
+					if (filterNameLabel) filterNameLabel.textContent = ''; // 이름 초기화
+				}
+			});
+			// 지역(location-area) 표시 여부 설정
+			// 지역(location-area) 표시 여부 설정 및 클래스 업데이트
+			if (visibleItems > 0) {
+				area.style.display = 'flex';
+				//area.classList.add('filtering'); // 필터링 클래스 추가
+			} else {
+				area.style.display = 'none';
+				//area.classList.remove('filtering'); // 필터링 클래스 제거      
+			}
+		});
+		
+		iziToast.success({ title: '필터링이 완료되었습니다.', message: '', drag: true, position: 'topCenter', targetFirst: true, timeout: 3000, progressBar: true, progressBarEasing: 'linear', close: true });
+		saveFiltersStorage();
+		changeFilterAlign();
+	});
+
+	// HEX를 RGB로 변환
+	function hexToRGB(hex) {
+	  const bigint = parseInt(hex.slice(1), 16);
+	  return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+	}
+	
+	// RGB 파싱 함수
+	function parseRGB(input) {
+	  const match = input.match(/(\d+)[,\s\/.\-;:]+(\d+)[,\s\/.\-;:]+(\d+)/);
+	  if (!match) return null;
+	  return match.slice(1, 4).map(Number);
+	}
+	
+	
+	// RGB 비교 // rgb 각각 오차
+	function compareRGB(rgb1, rgb2, method, range, rangeType) {
+		const diff = rgb1.map((val, idx) => Math.abs(val - rgb2[idx]));
+
+		if (rangeType === "each") {
+			if (method === '+') return diff.every((val, idx) => val <= range && rgb1[idx] >= rgb2[idx]);
+			if (method === '-') return diff.every((val, idx) => val <= range && rgb1[idx] <= rgb2[idx]);
+			return diff.every(val => val <= range);
+		} else {
+			const totalDiff = diff.reduce((sum, val) => sum + val, 0); // 총 오차 계산
+
+			if (method === '+') {
+				return totalDiff <= range && rgb1.every((val, idx) => val >= rgb2[idx]); // 총 오차 + 모든 rgb1 값이 rgb2 이상
+			}
+			if (method === '-') {
+				return totalDiff <= range && rgb1.every((val, idx) => val <= rgb2[idx]); // 총 오차 + 모든 rgb1 값이 rgb2 이하
+			}
+			return totalDiff <= range; // 총 오차가 범위 이내
+		}
+	}
+
+	// RGB 범위 비교
+	function compareRGBRanges(rgb, rRange, gRange, bRange) {
+	  return (
+	    rgb[0] >= rRange[0] && rgb[0] <= rRange[1] &&
+	    rgb[1] >= gRange[0] && rgb[1] <= gRange[1] &&
+	    rgb[2] >= bRange[0] && rgb[2] <= bRange[1]
+	  );
+	}
+	
+	// 범위 값 가져오기 함수
+	function getRange(group, color) {
+	  const startInput = group.querySelector(`.color-${color} input.color-start`);
+	  const endInput = group.querySelector(`.color-${color} input.color-end`);
+	  const start = startInput ? parseInt(startInput.value, 10) : '';
+	  const end = endInput ? parseInt(endInput.value, 10) : '';
+	  
+	  if(isNaN(start) || isNaN(end)) return false;
+	  return [start, end];
+	}
+	
+	// 아이템이 특정 셋에 포함되는지 확인
+	function isInSet(itemName, sets) {
+	  for (const set of sets) {
+	    if (setDefinitions[set]?.includes(itemName)) {
+	      return true;
+	    }
+	  }
+	  return false;
+	}
+	
+	function addFilterItem(isDetail) {
+	    const container = document.getElementById(isDetail ? 'filter-color-detail' : 'filter-color');
+	    const newItem = document.createElement('div');
+	    newItem.className = isDetail? 'colorFilter detail' :'colorFilter flex-simple-row';
+	
+	    // 공통 HTML 구조
+	    newItem.innerHTML = `
+			${isDetail ? `<div class="flex-row">`: ``}
+	        <div class="wrapper">
+	            <input type="checkbox" id="switch-${currentIndex}" class="switch" checked="checked">
+	            <label for="switch-${currentIndex}" class="switch_label">
+	                <span class="onf_btn"></span>
+	                <label class="switch-state switch-on">ON</label>
+	                <label class="switch-state switch-off">OFF</label>
+	            </label>
+	        </div>
+	        <select class="set-logical">
+		    	<option value="and">AND</option>
+		    	<option value="or">OR</option>
+		    </select>
+			${isDetail ? `</div><div class="flex-row show-simple">`: ``}
+	        <div class="filter-select show-simple">
+				<select class="filter-set show-simple">
+		           <option value="">번호</option>
+		           <option value="1">1</option>
+		           <option value="2">2</option>
+		           <option value="3">3</option>
+		           <option value="4">4</option>
+		           <option value="5">5</option>
+		       </select>
+		       <label class="label-title center">세트</label>
+	        </div>
+	        <div class="filter-input show-simple">
+	            <input type="text" class="filter-set-index input-text filter-input-padding input-number" value="1" required>
+	            <label class="label-title center">순서</label>
+	        </div>
+	        ${isDetail ? `</div>`: ``}
+	        <div class="filter-input name">
+				<input type="text" class="filter-name input-text input-max-4">
+				<lable class="label-title" >이름<small> (4글자)</small></lable>
+			</div>
+	        <select class="filter-type show-simple">
+				<option value="">전체</option>
+				<option value="A">A 겉감</option>
+				<option value="B">B 안감+아이콘</option>
+				<option value="C">C 안감+로마자</option>
+				<option value="C+">C 안감만</option>
+				<option value="R">C 로마자만</option>
+			</select>
+	        <div class="filter-color-info">
+	            <span class="filter-color-rect ${isDetail ? `color-gradient"`:`"`}></span>
+	            ${isDetail ? ``:`
+	            <div class="filter-input">
+	                <input type="text" id="colorInput-${currentIndex}" class="input-text set-color filter-input-padding" required>
+	                <label class="label-title">RGB or HEX</label>
+	            </div>
+	            `}
+	        </div>
+	        ${isDetail ? `
+	       		<div id="detail-color" class="detail-color show-simple">
+	                <div class="filter-input color color-r">
+	                    <input type="text" id="r-start-${currentIndex}" class="input-text color-start" required> ~ 
+	                    <input type="text" id="r-end-${currentIndex}" class="input-text color-end" required>
+	                    <label class="label-title">R</label>
+	                </div>
+	                <div class="filter-input color color-g">
+	                    <input type="text" id="g-start-${currentIndex}" class="input-text color-start" required> ~ 
+	                    <input type="text" id="g-end-${currentIndex}" class="input-text color-end" required>
+	                    <label class="label-title">G</label>
+	                </div>
+	                <div class="filter-input color color-b">
+	                    <input type="text" id="b-start-${currentIndex}" class="input-text color-start" required> ~ 
+	                    <input type="text" id="b-end-${currentIndex}" class="input-text color-end" required>
+	                    <label class="label-title">B</label>
+	                </div>
+	            </div>	
+	   		`:`
+	   			<select class="set-method show-simple">
+	            	<option value="+-">±</option>
+		        	<option value="+">+</option>
+		        	<option value="-">-</option>
+				</select>
+				<div class="filter-input show-simple">
+		        	<input type="text" id="plus-minus-${currentIndex}" class="input-text set-plus-minus filter-input-padding input-number" required>
+		        	<label class="label-title center">오차</label>
+				</div>
+				<select class="error-range-type show-simple">
+			    	<option value="each">RGB 각각</option>
+			    	<option value="sum">RGB 총합</option>
+			    </select>
+	   		`}
+	        <button class="removeFilter removeBtn">제거</button>
+	    `;
+	
+	    container.appendChild(newItem);
+	    newItem.querySelector(".removeFilter.removeBtn").addEventListener("click", () => {
+	        newItem.remove(), saveFiltersStorage(), updateSetLogicalStates()
+	    });
+	    
+	 	onlyPositiveNumber(newItem.querySelectorAll(".input-number"));
+	 	setInputMaxLength(newItem.querySelectorAll(".input-max-4"), 4);
+	 	
+	    if(isDetail) setFilterColorDetail(newItem);
+	    else setFilterColorSimple(newItem);
+	    
+	    currentIndex++;
+	    saveFiltersStorage();
+	}
+
+	let currentIndex = document.querySelectorAll(".colorFilter").length; // 초기 index 값
+	
+	// 호출 예시
+	function addSimpleFilterItem() {
+	    addFilterItem(false); // Simple 필터 추가
+	    updateSetLogicalStates(); // 상태 업데이트
+	}
+	
+	function addDetailFilterItem() {
+	    addFilterItem(true); // Detail 필터 추가
+	    updateSetLogicalStates(); // 상태 업데이트
+	}
+	
+	function filterHideShow(this_) {
+		if(this_.getAttribute('info') == 'hide') {
+			this_.textContent = '필터 숨기기';
+			this_.setAttribute('info', 'show');
+			
+			document.getElementById('filterForm').setAttribute('info', 'show');
+			document.querySelectorAll(".filterHide").forEach(elem => {
+    				elem.style.display = "";
+			});
+				
+		}else{
+			this_.textContent = '필터 보기';
+			this_.setAttribute('info', 'hide');
+			
+			document.getElementById('filterForm').setAttribute('info', 'hide');
+			document.querySelectorAll(".filterHide").forEach(elem => {
+    				elem.style.display = "none";
+			});	
+		}
+	}
+
+	/*
+	// 필터 제거 함수
+	function removeFilter(button) {
+	    const filter = button.closest('.colorFilter'); // 상위 colorFilter 요소를 찾음
+	    if (filter) {
+	        filter.remove(); // 요소 제거
+	    }
+	}
+	*/
+	
+	// 요소 선택	
+	const toggleButton = document.getElementById('optionBtn');
+	//const filterContent = document.getElementById('filterForm');
+
+	toggleButton.addEventListener('click', () => {
+	    // content 영역을 숨김/보임 토글
+	    filterForm.classList.toggle('hidden');
+
+	    // 버튼 텍스트 변경
+	    if (filterForm.classList.contains('hidden')) {
+	        toggleButton.textContent = '옵션 펼치기'; // 펼치기	        
+	    } else {
+	        toggleButton.textContent = '옵션 접기'; // 접기
+	        scrollToTop();
+	    }
+	});
+	
+	document.getElementById("topBtn").addEventListener("click", scrollToTop);
+
+	function scrollToTop() {
+		window.scrollTo({
+			top: 0,
+			behavior: "smooth"
+		});
+	}
+	// 색상 유효성 검사 함수
+	function isValidColor(color) {
+	    const rgbRegex = /^\s*(\d{1,3})\s*[,/\-\s]\s*(\d{1,3})\s*[,/\-\s]\s*(\d{1,3})\s*$/;
+	    const hexRegex = /^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/;
+	
+	    // 단일 숫자는 유효하지 않은 색상으로 처리
+	    if (/^\d+$/.test(color)) {
+	        return false;
+	    }
+	
+	    // HEX 색상 확인
+	    if (hexRegex.test(color)) {
+	        return true;
+	    }
+	
+	    // RGB 색상 확인
+	    const match = color.match(rgbRegex);
+	    if (match) {
+	        const [_, r, g, b] = match.map(Number);
+	        return r <= 255 && g <= 255 && b <= 255; // RGB 값이 유효한지 확인
+	    }
+	
+	    return false; // 유효하지 않은 색상
+	}
+
+	// CSS에 적용 가능한 색상으로 변환
+	function formatToCssColor(color) {
+	    const rgbRegex = /^\s*(\d{1,3})\s*[,/\-\s]\s*(\d{1,3})\s*[,/\-\s]\s*(\d{1,3})\s*$/;
+	    const hexRegex = /^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/;
+	
+	    // 단일 숫자는 유효하지 않은 값으로 간주
+	    if (/^\d+$/.test(color)) {
+	        return 'transparent'; // 유효하지 않으면 투명 처리
+	    }
+	
+	    // HEX 처리
+	    if (hexRegex.test(color)) {
+	        return color.startsWith('#') ? color : `#${color}`;
+	    }
+	
+	    // RGB 처리
+	    const match = color.match(rgbRegex);
+	    if (match) {
+	        const [_, r, g, b] = match.map(Number);
+	        return `rgb(${r}, ${g}, ${b})`;
+	    }
+	
+	    return 'transparent'; // 유효하지 않으면 투명
+	}
+
+	// 단일 색상 필터 업데이트
+	function updateSingleColorRect(inputElement) {
+	    const rect = inputElement.closest('.filter-color-info').querySelector('.filter-color-rect');
+	    const colorValue = inputElement.value.trim();
+	
+	    if (isValidColor(colorValue)) {
+	        rect.style.backgroundColor = formatToCssColor(colorValue);
+	    } else {
+	        rect.style.backgroundColor = 'transparent';
+	    }
+	}
+
+	// 색상 그라디언트 필터 업데이트
+	function updateDetailColorGradient(containerElement) {
+	    const rStart = containerElement.querySelector('.color-r .color-start').value.trim();
+	    const rEnd = containerElement.querySelector('.color-r .color-end').value.trim();
+	    const gStart = containerElement.querySelector('.color-g .color-start').value.trim();
+	    const gEnd = containerElement.querySelector('.color-g .color-end').value.trim();
+	    const bStart = containerElement.querySelector('.color-b .color-start').value.trim();
+	    const bEnd = containerElement.querySelector('.color-b .color-end').value.trim();
+
+	    const gradientElement = containerElement.querySelector('.filter-color-rect.color-gradient');
+		
+	    if (
+	        isValidColor(`${rStart}, ${gStart}, ${bStart}`) &&
+	        isValidColor(`${rEnd}, ${gEnd}, ${bEnd}`)
+	    ) {
+	        gradientElement.style.background = `linear-gradient(to right, rgb(${rStart} ${gStart} ${bStart}), rgb(${rEnd} ${gEnd} ${bEnd}))`;
+	    } else {
+	        gradientElement.style.background = 'transparent';
+	    }
+	}
+
+	// #filter-color 처리
+	setFilterColorSimple(document.getElementById('filter-color'));
+	
+	function setFilterColorSimple(elem){
+		if (elem) {
+		    const setColorInputs = elem.querySelectorAll('.set-color');
+		    setColorInputs.forEach((input) => {
+		        input.addEventListener('input', () => {
+		            updateSingleColorRect(input);
+		        });
+		    });
+		}
+	}
+
+	function setFilterColorDetail(elem){
+		if (elem) {
+		    const detailColorContainers = elem.querySelector('.detail-color');
+	        const colorInputs = detailColorContainers.querySelectorAll('.color-start, .color-end');
+	        const colorBg = detailColorContainers.querySelector('.filter-color-rect.color-gradient');
+	        colorInputs.forEach((input) => {
+	            input.addEventListener('input', () => {
+	                updateDetailColorGradient(elem);
+	            });
+	        });
+		}
+	}
+	
+	function saveFiltersStorage(){
+	    const filters = {
+	        simple: [],
+	        detail: [],
+	    };
+	
+	    // Simple 필터 저장
+	    document.querySelectorAll('#filter-color .colorFilter').forEach((filter) => {
+	        filters.simple.push({
+	            switch: filter.querySelector('.switch').checked,
+	            logical: filter.querySelector('.set-logical').value,
+	            set: filter.querySelector('.filter-set').value,
+	            index: filter.querySelector('.filter-set-index').value,
+	            name: filter.querySelector('.filter-name').value,
+	            type: filter.querySelector('.filter-type').value,
+	            color: filter.querySelector('.set-color')?.value || '',
+	            method: filter.querySelector('.set-method').value,
+	            tolerance: filter.querySelector('.set-plus-minus').value,
+	            errorRangeType: filter.querySelector('.error-range-type').value,            
+	        });
+	    });
+	
+	    // Detail 필터 저장
+	    document.querySelectorAll('#filter-color-detail .colorFilter').forEach((filter) => {
+	        filters.detail.push({
+	            switch: filter.querySelector('.switch').checked,
+	            logical: filter.querySelector('.set-logical').value,
+	            set: filter.querySelector('.filter-set').value,
+	            index: filter.querySelector('.filter-set-index').value,
+	            name: filter.querySelector('.filter-name').value,
+	            type: filter.querySelector('.filter-type').value,
+	            rStart: filter.querySelector('.color-r .color-start')?.value || '',
+	            rEnd: filter.querySelector('.color-r .color-end')?.value || '',
+	            gStart: filter.querySelector('.color-g .color-start')?.value || '',
+	            gEnd: filter.querySelector('.color-g .color-end')?.value || '',
+	            bStart: filter.querySelector('.color-b .color-start')?.value || '',
+	            bEnd: filter.querySelector('.color-b .color-end')?.value || '',
+	        });
+	    });
+	
+	    localStorage.setItem('filters', JSON.stringify(filters));
+	}
+	
+	function loadFiltersFromLocalStorage() {
+	    const savedFilters = JSON.parse(localStorage.getItem('filters'));
+	    if (!savedFilters) return;
+	
+	    const simpleContainer = document.querySelector('#filter-color');
+	    const detailContainer = document.querySelector('#filter-color-detail');
+	
+	    // 기존 필터 제거
+	    simpleContainer.innerHTML = '';
+	    detailContainer.innerHTML = '';
+	    
+	    // Simple 필터 복원
+	    savedFilters.simple.forEach((filter, index) => {
+	        const filterElement = createSimpleFilter(filter, index);
+	        simpleContainer.appendChild(filterElement);
+	    });
+	
+	    // Detail 필터 복원
+	    savedFilters.detail.forEach((filter, index) => {
+	        const filterElement = createDetailFilter(filter, index);
+	        detailContainer.appendChild(filterElement);
+	    });
+	    
+	    updateSetLogicalStates();
+	}
+
+	// Simple 필터 동적 생성
+	function createSimpleFilter(filter, index) {
+	    const filterDiv = document.createElement('div');
+	    filterDiv.classList.add('colorFilter','flex-simple-row');
+	
+	    filterDiv.innerHTML = `
+	        <div class="wrapper">
+	            <input type="checkbox" id="switch-s-${index}" class="switch" ${filter.switch ? 'checked' : ''}>
+	            <label for="switch-s-${index}" class="switch_label">
+	                <span class="onf_btn"></span>
+	                <label class="switch-state switch-on">ON</label>
+	                <label class="switch-state switch-off">OFF</label>
+	            </label>
+	        </div>
+	        <select class="set-logical">
+	            <option value="and" ${filter.logical === 'and' ? 'selected' : ''}>AND</option>
+	            <option value="or" ${filter.logical === 'or' ? 'selected' : ''}>OR</option>
+	        </select>
+	        <div class="filter-select show-simple">
+	            <select class="filter-set show-simple">
+	                <option value="" ${filter.set === '' ? 'selected' : ''}>번호</option>
+	                <option value="1" ${filter.set === '1' ? 'selected' : ''}>1</option>
+	                <option value="2" ${filter.set === '2' ? 'selected' : ''}>2</option>
+	                <option value="3" ${filter.set === '3' ? 'selected' : ''}>3</option>
+	                <option value="4" ${filter.set === '4' ? 'selected' : ''}>4</option>
+	                <option value="5" ${filter.set === '5' ? 'selected' : ''}>5</option>
+	            </select>
+	            <label class="label-title center">세트</label>
+	        </div>
+	        <div class="filter-input show-simple">
+	            <input type="text" class="filter-set-index input-text filter-input-padding input-number" value="${filter.index}" required>
+	            <label class="label-title center">순서</label>
+	        </div>
+	        <div class="filter-input name">
+	            <input type="text" class="filter-name input-text input-max-4" value="${filter.name}">
+	            <label class="label-title">이름<small> (4글자)</small></label>
+	        </div>
+	        <select class="filter-type show-simple">
+	            <option value="" ${filter.type === '' ? 'selected' : ''}>전체</option>
+	            <option value="A" ${filter.type === 'A' ? 'selected' : ''}>A 겉감</option>
+	            <option value="B" ${filter.type === 'B' ? 'selected' : ''}>B 안감+아이콘</option>
+	            <option value="C" ${filter.type === 'C' ? 'selected' : ''}>C 안감+로마자</option>
+	            <option value="C+" ${filter.type === 'C+' ? 'selected' : ''}>C 안감만</option>
+	            <option value="R" ${filter.type === 'R' ? 'selected' : ''}>C 로마자만</option>
+	        </select>
+	        <div class="filter-color-info">
+	            <span class="filter-color-rect" style="background-color: rgb(${filter.color});"></span>
+	            <div class="filter-input">
+	                <input type="text" class="input-text set-color filter-input-padding" value="${filter.color}">
+	                <label class="label-title">RGB or HEX</label>
+	            </div>
+	        </div>
+	        <select class="set-method show-simple">
+	            <option value="+-" ${filter.method === '+-' ? 'selected' : ''}>±</option>
+	            <option value="+" ${filter.method === '+' ? 'selected' : ''}>+</option>
+	            <option value="-" ${filter.method === '-' ? 'selected' : ''}>-</option>
+	        </select>
+	        <div class="filter-input show-simple">
+	            <input type="text" class="input-text set-plus-minus filter-input-padding input-number" value="${filter.tolerance}">
+	            <label class="label-title center">오차</label>
+	        </div>
+	        <select class="error-range-type show-simple">
+		    	<option value="each" ${filter.errorRangeType === 'each' ? 'selected' : ''}>RGB 각각</option>
+		    	<option value="sum" ${filter.errorRangeType === 'sum' ? 'selected' : ''}>RGB 총합</option>
+		    </select>
+	        <button class="removeFilter removeBtn">제거</button>
+	    `;
+		filterDiv.querySelector(".removeFilter.removeBtn").addEventListener("click", () => {
+	        filterDiv.remove(), saveFiltersStorage()
+	    });
+	    
+	    return filterDiv;
+	}
+
+	// Detail 필터 동적 생성
+	function createDetailFilter(filter, index) {
+	    const filterDiv = document.createElement('div');
+	    filterDiv.classList.add('colorFilter', 'detail');
+	
+	    filterDiv.innerHTML = `
+	    	<div class="flex-row">
+		        <div class="wrapper">
+		            <input type="checkbox" id="switch-d-${index}" class="switch" ${filter.switch ? 'checked' : ''}>
+		            <label for="switch-d-${index}" class="switch_label">
+		                <span class="onf_btn"></span>
+		                <label class="switch-state switch-on">ON</label>
+		                <label class="switch-state switch-off">OFF</label>
+		            </label>
+		        </div>
+		        <select class="set-logical">
+		            <option value="and" ${filter.logical === 'and' ? 'selected' : ''}>AND</option>
+		            <option value="or" ${filter.logical === 'or' ? 'selected' : ''}>OR</option>
+		        </select>
+		    </div>
+		    <div class="flex-row show-simple">
+		        <div class="filter-select">
+		            <select class="filter-set">
+		                <option value="" ${filter.set === '' ? 'selected' : ''}>번호</option>
+		                <option value="1" ${filter.set === '1' ? 'selected' : ''}>1</option>
+		                <option value="2" ${filter.set === '2' ? 'selected' : ''}>2</option>
+		                <option value="3" ${filter.set === '3' ? 'selected' : ''}>3</option>
+		                <option value="4" ${filter.set === '4' ? 'selected' : ''}>4</option>
+		                <option value="5" ${filter.set === '5' ? 'selected' : ''}>5</option>
+		            </select>
+		            <label class="label-title center">세트</label>
+		        </div>
+		        <div class="filter-input">
+		            <input type="text" class="filter-set-index input-text filter-input-padding input-number" value="${filter.index}" required>
+		            <label class="label-title center">순서</label>
+		        </div>
+	        </div>
+	        <div class="filter-input name">
+	            <input type="text" class="filter-name input-text input-max-4" value="${filter.name}">
+	            <label class="label-title">이름<small> (4글자)</small></label>
+	        </div>
+	        <select class="filter-type show-simple">
+				<option value="" ${filter.type === '' ? 'selected' : ''}>전체</option>
+	            <option value="A" ${filter.type === 'A' ? 'selected' : ''}>A 겉감</option>
+	            <option value="B" ${filter.type === 'B' ? 'selected' : ''}>B 안감+아이콘</option>
+	            <option value="C" ${filter.type === 'C' ? 'selected' : ''}>C 안감+로마자</option>
+	            <option value="C+" ${filter.type === 'C+' ? 'selected' : ''}>C 안감만</option>
+	            <option value="R" ${filter.type === 'R' ? 'selected' : ''}>C 로마자만</option>
+			</select>
+			<div class="filter-color-info">
+				${filter.rStart == ''? '<span class="filter-color-rect color-gradient"></span>':
+	            	`<span class="filter-color-rect color-gradient" style="background:linear-gradient(to right, rgb(${filter.rStart} ${filter.gStart} ${filter.bStart}), rgb(${filter.rEnd} ${filter.gEnd} ${filter.bEnd}))"></span>`
+	            }            
+	        </div>
+	        <div id="detail-color" class="detail-color show-simple">
+		        <div class="filter-input color color-r">
+		            <input type="text" class="input-text color-start" value="${filter.rStart}"> ~ 
+		            <input type="text" class="input-text color-end" value="${filter.rEnd}">
+		            <label class="label-title">R</label>
+		        </div>
+		        <div class="filter-input color color-g">
+		            <input type="text" class="input-text color-start" value="${filter.gStart}"> ~ 
+		            <input type="text" class="input-text color-end" value="${filter.gEnd}">
+		            <label class="label-title">G</label>
+		        </div>
+		        <div class="filter-input color color-b">
+		            <input type="text" class="input-text color-start" value="${filter.bStart}"> ~ 
+		            <input type="text" class="input-text color-end" value="${filter.bEnd}">
+		            <label class="label-title">B</label>
+		        </div>
+		    </div>
+	        <button class="removeFilter removeBtn">제거</button>
+	    `;
+		filterDiv.querySelector(".removeFilter.removeBtn").addEventListener("click", () => {
+	        filterDiv.remove(), saveFiltersStorage()
+	    });
+	    setFilterColorDetail(filterDiv);
+	    return filterDiv;
+	}
+	
+	document.getElementById('filters').addEventListener('change', (e) => {
+	    saveFiltersStorage();	   
+	});
+	
+	document.getElementById('filters').addEventListener('input', (e) => {
+		saveFiltersStorage();
+		 if (e.target.classList.contains('filter-set-index')) {
+	        updateSetLogicalStates(); // 순서 변경에 따른 상태 업데이트
+	    }
+	});
+	
+	document.getElementById('filterSimplify').addEventListener('click', function(e){
+		const fitClass = filterForm.classList;
+		if(fitClass.contains("simplify")) {			
+			fitClass.remove("simplify");
+			this.innerText = "필터 요약";
+		}else{
+			fitClass.add("simplify");
+			this.innerText = "필터 전체";
+		}
+		//filterForm.classList.toggle("simplify");
+	});
+	
+	document.getElementById("cancleColorFilter").addEventListener('click', function(e){
+  		const locationAreas = [...document.querySelectorAll('.location-area')]; // 모든 지역
+  		const tbClass = tables.classList;
+
+  		if(locationAreas.lenght < 1) return;
+  		if(tbClass.contains("vertical")) tbClass.remove("vertical");
+  		if(tbClass.contains("filtering")) tbClass.remove("filtering");  		
+  		
+		locationAreas.forEach(area => {
+			const items = [...area.querySelectorAll('.item')];
+			area.style.display = 'flex'; // 모든 지역 표시
+			area.classList.remove('filtering'); // 필터링 클래스 제거
+
+			items.forEach(item => {
+				item.style.display = 'block'; // 모든 아이템 표시
+				item.querySelectorAll('.color-info .color_rect_p').forEach(info => {
+					info.classList.remove('filtering-color'); // 색상 필터 클래스 제거
+				});
+				// 필터링 관련 상태 초기화
+				const filterNameToggle = item.querySelector('.filter-name-toggle');
+				const filterNameLabel = item.querySelector('.filter-name');
+				if (filterNameToggle) filterNameToggle.value = '';
+				if (filterNameLabel) filterNameLabel.textContent = '';
+			});
+		});
+
+	});	
+	
+	function onlyPositiveNumber(elem){
+		elem.forEach(input => {			
+			const notZero = input.classList.contains("filter-set-index");
+			input.addEventListener('input', () => {
+				if(notZero){
+            		input.value = input.value.replace(/[^0-9]/g, ''); // 숫자가 아닌 것은 제거
+					if (/^0/.test(input.value)) {
+					    input.value = input.value.replace(/^0+/, ''); // 0으로 시작하면 제거
+					}
+				}
+            	else
+            		input.value = input.value.replace(/[^0-9]/g, ''); // 숫자만 허용
+			});
+		});
+	}
+		
+	function setInputMaxLength(elem, len){
+		elem.forEach(input => {
+			input.addEventListener('input', () => {
+	            if (input.value.length > len) {
+	                input.value = input.value.slice(0, len); // 최대 4글자
+	            }
+        	});
+        });
+	}
+	
+	// 필터링 상태 업데이트
+	function updateSetLogicalStates() {
+	    // 모든 필터 조건 그룹 순회
+	    document.querySelectorAll('.colorFilter').forEach((filterGroup) => {
+	        const setIndexInput = filterGroup.querySelector('.filter-set-index'); // 순서 인덱스
+	        const setLogical = filterGroup.querySelector('.set-logical'); // 논리 연산자
+	
+	        // filter-set-index 값을 가져오기
+	        const setIndex = parseInt(setIndexInput?.value || 0, 10);
+	
+	        if (setIndex === 1) {
+	            // 첫 번째 조건
+	            setLogical.setAttribute('data-tooltip', '첫번째 순서에는 필요하지 않습니다');
+	            setLogical.disabled = true; // 비활성화
+	            setLogical.value="and";
+	            setJsTooltip(setLogical, true);
+	        } else {
+	            // 첫 번째 조건이 아닌 경우
+	            setLogical.removeAttribute('data-tooltip'); // 속성 제거
+	            setLogical.disabled = false; // 활성화
+	            setJsTooltip(setLogical, false);
+	        }
+	    });
+	}
+	
+	function setJsTooltip(elem, show) {		
+	    // 툴팁 생성
+	    const tooltip = document.createElement('div');
+	    tooltip.className = 'jsTooltip';
+	    tooltip.textContent = elem.getAttribute('data-tooltip');
+	    document.body.appendChild(tooltip);
+	
+	    // 이벤트 핸들러 정의
+	    function showTooltip(event) {
+	        const rect = event.target.getBoundingClientRect();
+	        tooltip.style.top = `${rect.bottom + window.scrollY + 5}px`; // select 바로 아래
+	        tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+	        tooltip.style.display = 'block';
+	    }
+	
+	    function hideTooltip() {
+	        tooltip.style.display = 'none';
+	    }
+	    
+	    if(show) {		
+		    // 마우스 엔터 및 리브 이벤트 추가
+		    elem.addEventListener('mouseenter', showTooltip);
+		    elem.addEventListener('mouseleave', hideTooltip);
+	    }else{		
+	        elem.removeEventListener('mouseenter', showTooltip);
+	        elem.removeEventListener('mouseleave', hideTooltip);
+	        document.body.removeChild(tooltip); // 툴팁 DOM 제거
+	    }
+	}
+    
+	 // 음수 제외 숫자만 허용
+    onlyPositiveNumber(document.querySelectorAll('.input-number'));
+    // 최대 4글자 제한
+    setInputMaxLength(document.querySelectorAll('.input-max-4'));
+    
+    // 1) option_list → {A:[r,g,b], B:[r,g,b], C:[r,g,b]} 로 반환
+	function parseColorsFromOptionsToArrays(option_list) {
+	    const labelMap = { "파트 A": "A", "파트 B": "B", "파트 C": "C" };
+	    const out = { A: ['?','?','?'], B: ['?','?','?'], C: ['?','?','?']};
+	
+	    if (Array.isArray(option_list)) {
+	        option_list.forEach(opt => {
+	            if (opt.option_type === "아이템 색상" && labelMap[opt.option_sub_type]) {
+	                const key = labelMap[opt.option_sub_type];
+	                const rgbStr = (opt.option_value ?? "").trim();
+	                if (rgbStr) {
+	                    out[key] = rgbStr.split(",").map(v => {
+	                        const s = v.trim();
+	                        return s === "?" ? "?" : parseInt(s, 10);
+	                    });
+	                }
+	            }
+	        });
+	    }
+	    return out;
+	}
+	
+	// 2) 어떤 형태든 {A:[r,g,b], ...} 로 보정
+	function ensureRGBArrays(colorValues) {
+	    const toArray = (v) => {
+	        if (Array.isArray(v)) return v.map(x => x === '?' ? '?' : parseInt(x, 10));
+	        if (typeof v === 'string') {
+	            return v.split(',').map(s => {
+	                const t = s.trim();
+	                return t === '?' ? '?' : parseInt(t, 10);
+	            });
+	        }
+	        if (v && typeof v === 'object') {
+	            if (Array.isArray(v.rgb)) return v.rgb.map(x => x === '?' ? '?' : parseInt(x, 10));
+	            if (typeof v.rgb === 'string') {
+	                return v.rgb.split(',').map(s => {
+	                    const t = s.trim();
+	                    return t === '?' ? '?' : parseInt(t, 10);
+	                });
+	            }
+	        }
+	        return ['?','?','?'];
+	    };
+	
+	    const out = {};
+	    for (const [k, raw] of Object.entries(colorValues || {})) {
+	        out[k] = toArray(raw);
+	    }
+	    return out;
+	}
+	
+	let __lazyImgObserver;
+	function ensureLazyImgObserver() {
+		if (__lazyImgObserver) return __lazyImgObserver;
+		__lazyImgObserver = new IntersectionObserver((entries, obs) => {
+			for (const e of entries) {
+				if (!e.isIntersecting) continue;
+				const img = e.target;
+				const src = img.dataset.src;
+				const srcset = img.dataset.srcset;
+				if (src) img.src = src;
+				if (srcset) img.srcset = srcset;
+				img.dataset.loaded = "1";
+				img.removeAttribute("data-src");
+				img.removeAttribute("data-srcset");
+				obs.unobserve(img);
+			}
+		}, {
+			root: null,              // 뷰포트 기준
+			rootMargin: "600px 0px", // 미리 당겨 로딩(스크롤 앞쪽)
+			threshold: 0.01
+		});
+		return __lazyImgObserver;
+	}
+
+	function makeImagesLazy(scopeEl) {
+		const io = ensureLazyImgObserver();
+		scopeEl.querySelectorAll('img').forEach(img => {
+			// 이미 lazy 처리된 경우 패스
+			if (img.dataset.loaded === "1" || img.dataset.lazyInit === "1") return;
+
+			// 실제 src/srcset을 data-*로 옮겨두고, 브라우저 네이티브 lazy도 함께 사용
+			if (!img.dataset.src && img.src) {
+				img.dataset.src = img.src;
+				img.removeAttribute('src'); // 레이아웃 흔들림 방지하려면 width/height는 유지
+			}
+			if (img.srcset && !img.dataset.srcset) {
+				img.dataset.srcset = img.srcset;
+				img.removeAttribute('srcset');
+			}
+			img.loading = 'lazy';
+			img.decoding = 'async';
+			img.setAttribute('fetchpriority', 'low');
+
+			img.dataset.lazyInit = "1";
+			io.observe(img);
+		});
+	}
+		
+	// 3) 아이템명으로 모드 판정
+	function getSetModeByItemName(itemName) {
+		const setName = itemNameToSet[itemName];   // (예: "방직셋")
+		if (AB_MODE_SETS.includes(setName)) return "AB";
+		if (ABC_MODE_SETS.includes(setName)) return "ABC";
+		return "UNKNOWN";
+	}
+	
+	// 4) 세트키 계산 (팔레트 공통 규칙)
+	//   - 항상 AB키 생성
+	//   - ABC모드일 때만 ABC키도 함께 생성
+	//   - color는 formatColorValuesWithPlaceholder() 결과({A:{hex,rgb},B:{…},C:{…}})
+	function computeSetKeys(itemName, color) {
+		const A = (color?.A?.rgb ?? "").replace(/\s+/g, ",");
+		const B = (color?.B?.rgb ?? "").replace(/\s+/g, ",");
+		const C = (color?.C?.rgb ?? "").replace(/\s+/g, ",");
+		
+		const mode = getSetModeByItemName(itemName);
+		const abKey = `COLOR|A=${A}|B=${B}|C=-`;
+		const abcKey = `COLOR|A=${A}|B=${B}|C=${C || "-"}`;
+
+		return { mode, abKey, abcKey };
+	}
+
+});
+
